@@ -181,7 +181,7 @@ Responses to the user MUST be concise and actionable. Long Claude
 outputs MUST be chunked into Telegram-friendly message sizes.
 Status updates (typing indicators, progress messages for long
 tasks) MUST be frequent enough that the user knows the system is
-working. Silence beyond 5 seconds without a typing indicator is a
+working. Silence beyond 3 seconds without a typing indicator is a
 UX bug.
 
 ### XV. Next Action as Unit of Work

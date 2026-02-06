@@ -186,8 +186,9 @@ responds.
 - **FR-003**: ClaudeService MUST accept prompt text and options
   (resume flag, image path, timeout) and return the CLI response
   as a string.
-- **FR-004**: ClaudeService MUST send a typing indicator before
-  spawning the CLI process.
+- **FR-004**: The message handler in `src/index.ts` MUST send a
+  typing indicator before calling ClaudeService. ClaudeService
+  itself does not interact with the Telegram API.
 - **FR-005**: A `SessionManager` module MUST persist and retrieve
   session state (session ID, last activity timestamp, message
   count) across relay restarts.
@@ -201,13 +202,15 @@ responds.
   starts a fresh conversation.
 - **FR-007**: A `MemoryService` module MUST persist and retrieve
   facts and goals from local file storage.
-- **FR-008**: MemoryService MUST detect intent markers
-  (`[REMEMBER: ...]`, `[GOAL: ...]`, `[DONE: ...]`) in Claude's
-  responses and update the memory store accordingly.
-- **FR-008a**: MemoryService MUST strip detected intent markers
-  from the response text before it is sent to the user. A brief
-  human-readable confirmation (e.g., "Noted: I'll remember your
-  birthday is March 15") MUST be appended to the cleaned response.
+- **FR-008**: Intent markers (`[REMEMBER: ...]`, `[GOAL: ...]`,
+  `[DONE: ...]`) MUST be detected and processed in two stages:
+  (a) `ClaudeService.detectIntents()` scans Claude's response text,
+  extracts marker data, strips markers, and returns confirmation
+  strings; (b) the message handler calls MemoryService methods
+  (`addFact`, `addGoal`, `completeGoal`) to persist the extracted
+  data. The cleaned response (markers removed) with appended
+  confirmations (e.g., "Noted: I'll remember your birthday is
+  March 15") is sent to the user.
 - **FR-009**: MemoryService MUST inject stored context (facts,
   active goals) into prompts sent to Claude. A soft cap applies:
   the most recent 50 facts and 20 active goals are included in

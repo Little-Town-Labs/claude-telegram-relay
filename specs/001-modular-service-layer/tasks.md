@@ -29,8 +29,8 @@
 
 **Purpose**: Extend config schema and build message queue — MUST be complete before ANY user story
 
-- [ ] T004 Add `sessionTtlMs`, `memoryFile`, and `cliTimeoutMs` fields to Zod schema in `src/config/schema.ts` with defaults (86400000, `{relayDir}/memory.json`, 120000) and update `parseEnvVars()` to read `SESSION_TTL_MS`, `MEMORY_FILE`, `CLI_TIMEOUT_MS` from environment
-- [ ] T005 Update `AppConfig` interface in `src/types/config.ts` to include `sessionTtlMs: number`, `memoryFile: string`, `cliTimeoutMs: number`
+- [ ] T004 Add `sessionTtlMs` and `cliTimeoutMs` fields to Zod schema in `src/config/schema.ts` with defaults (86400000, 120000); change existing `memoryFile` from optional to required with default `{relayDir}/memory.json`; update `parseEnvVars()` to read `SESSION_TTL_MS`, `CLI_TIMEOUT_MS` from environment (note: `MEMORY_FILE` env var already mapped)
+- [ ] T005 Update `AppConfig` interface in `src/types/config.ts`: add `sessionTtlMs: number` and `cliTimeoutMs: number` as new required fields; change existing `memoryFile` from optional (`memoryFile?: string`) to required (`memoryFile: string`). Also update `SessionState.messageCount` in `src/types/session.ts` from optional to required (`messageCount: number`) to match data-model.md and contract expectations.
 - [ ] T006 Update `loadConfig()` in `src/config/index.ts` to derive `memoryFile` path from `relayDir` (like existing `sessionFile`)
 - [ ] T007 Update existing config tests in `tests/unit/config/config.test.ts` to cover new fields (defaults, env var overrides, validation)
 - [ ] T008 Write tests for MessageQueue in `tests/unit/utils/queue.test.ts`: enqueue/dequeue FIFO order, sequential processing, size/isProcessing state, error in one task does not block subsequent tasks
@@ -79,7 +79,7 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T021 [P] [US2] Write unit tests for `SessionManager.load()` in `tests/unit/services/session.test.ts`: returns persisted state from valid file, returns fresh state when file missing, returns fresh state when file corrupted (invalid JSON), returns fresh state when session expired (lastActivity + TTL < now), returns valid state when session not expired
+- [ ] T021 [P] [US2] Write unit tests for `SessionManager.load()` in `tests/unit/services/session.test.ts`: returns persisted state from valid file, returns fresh state when file missing, returns fresh state when file corrupted (invalid JSON), returns fresh state when session expired (lastActivity + TTL < now), returns valid state when session not expired, returns fresh state when file read throws EACCES/EBUSY (locked by another process)
 - [ ] T022 [P] [US2] Write unit tests for `SessionManager.save()` in `tests/unit/services/session.test.ts`: writes state atomically (temp file + rename), persists all fields correctly
 - [ ] T023 [P] [US2] Write unit tests for `SessionManager.updateActivity()` in `tests/unit/services/session.test.ts`: updates sessionId, refreshes lastActivity timestamp, increments messageCount
 - [ ] T024 [P] [US2] Write unit tests for `SessionManager.clear()` in `tests/unit/services/session.test.ts`: resets to null session state, persists the reset state
@@ -131,13 +131,21 @@
 
 **Independent Test**: Send a photo with caption to bot via `npm run start`; receive Claude's image analysis.
 
+### Tests for User Story 4
+
+> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+
+- [ ] T041 [P] [US4] Write unit tests for photo handler in `tests/unit/services/media.test.ts`: successful download and ClaudeService call, download failure returns user-facing error, temp file cleanup after response, temp file cleanup on error
+- [ ] T042 [P] [US4] Write unit tests for document handler in `tests/unit/services/media.test.ts`: successful download and ClaudeService call with filename, download failure returns user-facing error, temp file cleanup
+- [ ] T043 [P] [US4] Write unit tests for voice handler in `tests/unit/services/media.test.ts`: replies with "voice requires transcription service" when not configured
+
 ### Implementation for User Story 4
 
-- [ ] T041 [US4] Add photo message handler in `src/index.ts`: download highest-res photo via Telegram API, save to uploads dir, call ClaudeService with `[Image: path]` prompt and caption, clean up temp file after response, handle download errors gracefully
-- [ ] T042 [US4] Add document message handler in `src/index.ts`: download document via Telegram API, save to uploads dir, call ClaudeService with `[File: path]` prompt and caption/filename, clean up temp file, handle errors
-- [ ] T043 [US4] Add voice message handler in `src/index.ts`: check for transcription service configuration, reply with "voice requires transcription service" message if not configured (graceful decline per spec)
-- [ ] T044 [US4] Wrap all media handlers in `MessageQueue.enqueue()` for FIFO processing consistency
-- [ ] T045 [US4] Run `npm test` and `npm run typecheck` to verify all tests still pass after media handlers added
+- [ ] T044 [US4] Add photo message handler in `src/index.ts`: download highest-res photo via Telegram API, save to uploads dir, call ClaudeService with `[Image: path]` prompt and caption, clean up temp file after response, handle download errors gracefully
+- [ ] T045 [US4] Add document message handler in `src/index.ts`: download document via Telegram API, save to uploads dir, call ClaudeService with `[File: path]` prompt and caption/filename, clean up temp file, handle errors
+- [ ] T046 [US4] Add voice message handler in `src/index.ts`: check for transcription service configuration, reply with "voice requires transcription service" message if not configured (graceful decline per spec)
+- [ ] T047 [US4] Wrap all media handlers in `MessageQueue.enqueue()` for FIFO processing consistency
+- [ ] T048 [US4] Run `npm test` and `npm run typecheck` to verify all US4 tests pass
 
 **Checkpoint**: All message types handled. Feature parity with `relay.ts` achieved through modular architecture.
 
@@ -147,11 +155,12 @@
 
 **Purpose**: Coverage verification, integration testing, and final validation
 
-- [ ] T046 Write integration test in `tests/integration/relay.test.ts`: mock Claude CLI spawn, simulate full message flow through modular entry point (text message → ClaudeService → response), verify typing indicator sent, verify response chunking for long outputs
-- [ ] T047 Run `npm run test:coverage` and verify all new modules in `src/services/` and `src/utils/queue.ts` achieve >= 80% line coverage
-- [ ] T048 Run `npm run lint` and fix any Biome warnings in new files
-- [ ] T049 Verify `npm run relay` (original entry point) still works unmodified — run existing tests to confirm no regressions
-- [ ] T050 Run full quickstart validation from `specs/001-modular-service-layer/quickstart.md`: text message, session continuity, session expiry, `/new` reset, memory facts, goal tracking
+- [ ] T049 Write integration test in `tests/integration/relay.test.ts`: mock Claude CLI spawn, simulate full message flow through modular entry point (text message → ClaudeService → response), verify typing indicator sent, verify response chunking for long outputs, verify Telegram-safe output sanitization (characters invalid in Telegram message format are escaped or stripped)
+- [ ] T050 Run `npm run test:coverage` and verify all new modules in `src/services/` and `src/utils/queue.ts` achieve >= 80% line coverage
+- [ ] T051 Run `npm run lint` and fix any Biome warnings in new files
+- [ ] T052 Verify `npm run relay` (original entry point) still works unmodified — run existing tests to confirm no regressions
+- [ ] T053 Run full quickstart validation from `specs/001-modular-service-layer/quickstart.md`: text message, session continuity, session expiry, `/new` reset, memory facts, goal tracking
+- [ ] T054 Verify SC-007 performance parity: measure response time for modular path (`npm run start`) vs monolithic path (`npm run relay`) for equivalent text messages and confirm modular overhead is within 500ms (manual or scripted comparison)
 
 ---
 
@@ -196,6 +205,9 @@
 **Phase 5** (tests):
 - T030, T031, T032, T033, T034, T035 can all run in parallel
 
+**Phase 6** (tests):
+- T041, T042, T043 can all run in parallel (same file but different describe blocks)
+
 **Cross-story parallelism** (after Phase 2):
 - US2 tests (T021-T024) can be written in parallel with US1 implementation (T016-T019)
 - US3 tests (T030-T035) can be written in parallel with US2 implementation (T025-T028)
@@ -218,8 +230,8 @@
 2. US1 → Test independently → Deploy (MVP!)
 3. US2 → Test independently → Deploy (conversations persist)
 4. US3 → Test independently → Deploy (memory across sessions)
-5. US4 → Test independently → Deploy (full media parity)
-6. Polish → Coverage, lint, integration tests → Final release
+5. US4 → Test first (T041-T043) → Implement (T044-T048) → Deploy (full media parity)
+6. Polish (T049-T054) → Coverage, lint, integration tests, performance check → Final release
 
 ### Sequential Execution (Single Developer)
 
