@@ -37,7 +37,7 @@ interface CompletedGoal {
 // OPTION 1: LOCAL JSON FILE (Simplest)
 // ============================================================
 
-const MEMORY_FILE = process.env.MEMORY_FILE || "/tmp/bot-memory.json";
+const MEMORY_FILE = process.env["MEMORY_FILE"] || "/tmp/bot-memory.json";
 
 export async function loadMemory(): Promise<Memory> {
   try {
@@ -81,7 +81,11 @@ export async function completeGoal(searchText: string): Promise<string> {
     return `No goal found matching "${searchText}"`;
   }
 
-  const [completed] = memory.goals.splice(index, 1);
+  const completed = memory.goals[index];
+  if (!completed) {
+    return `No goal found matching "${searchText}"`;
+  }
+  memory.goals.splice(index, 1);
   memory.completedGoals.push({
     text: completed.text,
     completedAt: new Date().toISOString(),

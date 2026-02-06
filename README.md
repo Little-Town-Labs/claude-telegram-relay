@@ -27,7 +27,7 @@ The CLI spawn approach is the simplest way to get Claude Code's full power (tool
 
 ## Requirements
 
-- [Bun](https://bun.sh/) runtime (or Node.js 18+)
+- Node.js 18+ (with npm)
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
 - Telegram Bot Token (from [@BotFather](https://t.me/BotFather))
 - Your Telegram User ID (from [@userinfobot](https://t.me/userinfobot))
@@ -40,14 +40,14 @@ git clone https://github.com/YOUR_USERNAME/claude-telegram-relay
 cd claude-telegram-relay
 
 # Install dependencies
-bun install
+npm install
 
 # Copy and edit environment variables
 cp .env.example .env
 # Edit .env with your tokens
 
 # Run
-bun run src/relay.ts
+npm run relay
 ```
 
 ## Cross-Platform "Always On" Setup
@@ -106,8 +106,8 @@ journalctl -u claude-relay -f
 2. Create Basic Task
 3. Trigger: "When the computer starts"
 4. Action: Start a program
-   - Program: `C:\Users\YOU\.bun\bin\bun.exe`
-   - Arguments: `run src/relay.ts`
+   - Program: `npx`
+   - Arguments: `tsx src/relay.ts`
    - Start in: `C:\path\to\claude-telegram-relay`
 5. In Properties, check "Run whether user is logged on or not"
 6. In Settings, check "Restart if the task fails"
@@ -121,7 +121,7 @@ PM2 works on all platforms and handles restarts, logs, and monitoring.
 npm install -g pm2
 
 # Start the relay
-pm2 start src/relay.ts --interpreter bun --name claude-relay
+pm2 start src/relay.ts --interpreter "npx tsx" --name claude-relay
 
 # Save the process list
 pm2 save
@@ -136,7 +136,7 @@ pm2 startup
 
 ```bash
 # Download NSSM, then:
-nssm install claude-relay "C:\Users\YOU\.bun\bin\bun.exe" "run src/relay.ts"
+nssm install claude-relay "npx" "tsx src/relay.ts"
 nssm set claude-relay AppDirectory "C:\path\to\claude-telegram-relay"
 nssm start claude-relay
 ```
@@ -145,7 +145,11 @@ nssm start claude-relay
 
 ```
 src/
-  relay.ts          # Core relay (what you customize)
+  index.ts            # New modular entry point
+  relay.ts            # Core relay (what you customize)
+  config/             # Configuration with Zod validation
+  types/              # TypeScript type definitions
+  utils/              # Shared utilities (logger, lock, telegram)
 
 examples/
   morning-briefing.ts   # Scheduled daily summary
@@ -168,15 +172,20 @@ The relay does three things:
 
 ```typescript
 // Simplified core pattern
+import { spawn } from "child_process";
+
 bot.on("message:text", async (ctx) => {
   const response = await spawnClaude(ctx.message.text);
   await ctx.reply(response);
 });
 
-async function spawnClaude(prompt: string): Promise<string> {
-  const proc = spawn(["claude", "-p", prompt, "--output-format", "text"]);
-  const output = await new Response(proc.stdout).text();
-  return output;
+function spawnClaude(prompt: string): Promise<string> {
+  return new Promise((resolve) => {
+    const proc = spawn("claude", ["-p", prompt, "--output-format", "text"]);
+    let output = "";
+    proc.stdout.on("data", (data) => output += data);
+    proc.on("close", () => resolve(output));
+  });
 }
 ```
 
@@ -195,11 +204,8 @@ if (ctx.from?.id.toString() !== process.env.TELEGRAM_USER_ID) {
 ### Session Continuity
 ```typescript
 // Resume conversations with --resume
-const proc = spawn([
-  "claude", "-p", prompt,
-  "--resume", sessionId,  // Continue previous conversation
-  "--output-format", "text"
-]);
+const args = ["-p", prompt, "--resume", sessionId, "--output-format", "text"];
+const proc = spawn("claude", args);
 ```
 
 ### Voice Messages
@@ -277,6 +283,25 @@ SUPABASE_URL=             # For cloud memory persistence
 SUPABASE_ANON_KEY=        # For cloud memory persistence
 GEMINI_API_KEY=           # For voice transcription
 ELEVENLABS_API_KEY=       # For voice responses
+```
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run type checking
+npm run typecheck
+
+# Run linting
+npm run lint
+
+# Run tests
+npm test
+
+# Run with auto-reload
+npm run dev
 ```
 
 ## FAQ

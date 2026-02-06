@@ -4,22 +4,23 @@
  * Minimal relay that connects Telegram to Claude Code CLI.
  * Customize this for your own needs.
  *
- * Run: bun run src/relay.ts
+ * Run: npm run relay
  */
 
-import { Bot, Context } from "grammy";
-import { spawn } from "bun";
-import { writeFile, mkdir, readFile, unlink } from "fs/promises";
+import { spawn } from "child_process";
+import { unlinkSync } from "fs";
 import { join } from "path";
+import { mkdir, readFile, unlink, writeFile } from "fs/promises";
+import { Bot, type Context } from "grammy";
 
 // ============================================================
 // CONFIGURATION
 // ============================================================
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
-const ALLOWED_USER_ID = process.env.TELEGRAM_USER_ID || "";
-const CLAUDE_PATH = process.env.CLAUDE_PATH || "claude";
-const RELAY_DIR = process.env.RELAY_DIR || join(process.env.HOME || "~", ".claude-relay");
+const BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"] || "";
+const ALLOWED_USER_ID = process.env["TELEGRAM_USER_ID"] || "";
+const CLAUDE_PATH = process.env["CLAUDE_PATH"] || "claude";
+const RELAY_DIR = process.env["RELAY_DIR"] || join(process.env["HOME"] || "~", ".claude-relay");
 
 // Directories
 const TEMP_DIR = join(RELAY_DIR, "temp");
@@ -50,7 +51,7 @@ async function saveSession(state: SessionState): Promise<void> {
   await writeFile(SESSION_FILE, JSON.stringify(state, null, 2));
 }
 
-let session = await loadSession();
+const session = await loadSession();
 
 // ============================================================
 // LOCK FILE (prevent multiple instances)
@@ -63,7 +64,7 @@ async function acquireLock(): Promise<boolean> {
     const existingLock = await readFile(LOCK_FILE, "utf-8").catch(() => null);
 
     if (existingLock) {
-      const pid = parseInt(existingLock);
+      const pid = Number.parseInt(existingLock);
       try {
         process.kill(pid, 0); // Check if process exists
         console.log(`Another instance running (PID: ${pid})`);
@@ -88,8 +89,10 @@ async function releaseLock(): Promise<void> {
 // Cleanup on exit
 process.on("exit", () => {
   try {
-    require("fs").unlinkSync(LOCK_FILE);
-  } catch {}
+    unlinkSync(LOCK_FILE);
+  } catch {
+    // Ignore cleanup errors
+  }
 });
 process.on("SIGINT", async () => {
   await releaseLock();
@@ -150,7 +153,7 @@ async function callClaude(
   prompt: string,
   options?: { resume?: boolean; imagePath?: string }
 ): Promise<string> {
-  const args = [CLAUDE_PATH, "-p", prompt];
+  const args = ["-p", prompt];
 
   // Resume previous session if available and requested
   if (options?.resume && session.sessionId) {
@@ -161,39 +164,46 @@ async function callClaude(
 
   console.log(`Calling Claude: ${prompt.substring(0, 50)}...`);
 
-  try {
-    const proc = spawn(args, {
-      stdout: "pipe",
-      stderr: "pipe",
-      env: {
-        ...process.env,
-        // Pass through any env vars Claude might need
-      },
+  return new Promise((resolve) => {
+    const proc = spawn(CLAUDE_PATH, args, {
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
     });
 
-    const output = await new Response(proc.stdout).text();
-    const stderr = await new Response(proc.stderr).text();
+    let stdout = "";
+    let stderr = "";
 
-    const exitCode = await proc.exited;
+    proc.stdout.on("data", (data: Buffer) => {
+      stdout += data.toString();
+    });
 
-    if (exitCode !== 0) {
-      console.error("Claude error:", stderr);
-      return `Error: ${stderr || "Claude exited with code " + exitCode}`;
-    }
+    proc.stderr.on("data", (data: Buffer) => {
+      stderr += data.toString();
+    });
 
-    // Extract session ID from output if present (for --resume)
-    const sessionMatch = output.match(/Session ID: ([a-f0-9-]+)/i);
-    if (sessionMatch) {
-      session.sessionId = sessionMatch[1];
-      session.lastActivity = new Date().toISOString();
-      await saveSession(session);
-    }
+    proc.on("error", (error) => {
+      console.error("Spawn error:", error);
+      resolve("Error: Could not run Claude CLI");
+    });
 
-    return output.trim();
-  } catch (error) {
-    console.error("Spawn error:", error);
-    return `Error: Could not run Claude CLI`;
-  }
+    proc.on("close", async (exitCode) => {
+      if (exitCode !== 0) {
+        console.error("Claude error:", stderr);
+        resolve(`Error: ${stderr || `Claude exited with code ${exitCode}`}`);
+        return;
+      }
+
+      // Extract session ID from output if present (for --resume)
+      const sessionMatch = stdout.match(/Session ID: ([a-f0-9-]+)/i);
+      if (sessionMatch?.[1]) {
+        session.sessionId = sessionMatch[1];
+        session.lastActivity = new Date().toISOString();
+        await saveSession(session);
+      }
+
+      resolve(stdout.trim());
+    });
+  });
 }
 
 // ============================================================
@@ -245,15 +255,17 @@ bot.on("message:photo", async (ctx) => {
     // Get highest resolution photo
     const photos = ctx.message.photo;
     const photo = photos[photos.length - 1];
+    if (!photo) {
+      await ctx.reply("Could not access photo.");
+      return;
+    }
     const file = await ctx.api.getFile(photo.file_id);
 
     // Download the image
     const timestamp = Date.now();
     const filePath = join(UPLOADS_DIR, `image_${timestamp}.jpg`);
 
-    const response = await fetch(
-      `https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`
-    );
+    const response = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`);
     const buffer = await response.arrayBuffer();
     await writeFile(filePath, Buffer.from(buffer));
 
@@ -285,9 +297,7 @@ bot.on("message:document", async (ctx) => {
     const fileName = doc.file_name || `file_${timestamp}`;
     const filePath = join(UPLOADS_DIR, `${timestamp}_${fileName}`);
 
-    const response = await fetch(
-      `https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`
-    );
+    const response = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`);
     const buffer = await response.arrayBuffer();
     await writeFile(filePath, Buffer.from(buffer));
 

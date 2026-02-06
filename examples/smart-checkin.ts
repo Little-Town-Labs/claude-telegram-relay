@@ -8,18 +8,16 @@
  * Run periodically (e.g., every 30 minutes) and Claude
  * intelligently decides whether to message you.
  *
- * Run: bun run examples/smart-checkin.ts
+ * Run: npx tsx examples/smart-checkin.ts
  */
 
-import { spawn } from "bun";
+import { spawn } from "child_process";
 import { readFile, writeFile } from "fs/promises";
-import { join } from "path";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
-const CHAT_ID = process.env.TELEGRAM_USER_ID || "";
-const CLAUDE_PATH = process.env.CLAUDE_PATH || "claude";
-const STATE_FILE =
-  process.env.CHECKIN_STATE_FILE || "/tmp/checkin-state.json";
+const BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"] || "";
+const CHAT_ID = process.env["TELEGRAM_USER_ID"] || "";
+const CLAUDE_PATH = process.env["CLAUDE_PATH"] || "claude";
+const STATE_FILE = process.env["CHECKIN_STATE_FILE"] || "/tmp/checkin-state.json";
 
 // ============================================================
 // STATE MANAGEMENT
@@ -78,17 +76,14 @@ async function getLastActivity(): Promise<string> {
 
 async function sendTelegram(message: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          text: message,
-        }),
-      }
-    );
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+      }),
+    });
     return response.ok;
   } catch {
     return false;
@@ -110,8 +105,7 @@ async function askClaudeToDecide(): Promise<{
 
   const now = new Date();
   const hour = now.getHours();
-  const timeContext =
-    hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  const timeContext = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
   const prompt = `
 You are a proactive AI assistant. Decide if you should check in with the user.
@@ -137,31 +131,39 @@ MESSAGE: [Your message if YES, or "none" if NO]
 REASON: [Why you decided this]
 `;
 
-  try {
-    const proc = spawn([CLAUDE_PATH, "-p", prompt, "--output-format", "text"], {
-      stdout: "pipe",
-      stderr: "pipe",
+  return new Promise((resolve) => {
+    const proc = spawn(CLAUDE_PATH, ["-p", prompt, "--output-format", "text"], {
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
     });
 
-    const output = await new Response(proc.stdout).text();
+    let stdout = "";
 
-    // Parse Claude's response
-    const decisionMatch = output.match(/DECISION:\s*(YES|NO)/i);
-    const messageMatch = output.match(/MESSAGE:\s*(.+?)(?=\nREASON:|$)/is);
-    const reasonMatch = output.match(/REASON:\s*(.+)/is);
+    proc.stdout.on("data", (data: Buffer) => {
+      stdout += data.toString();
+    });
 
-    const shouldCheckin = decisionMatch?.[1]?.toUpperCase() === "YES";
-    const message = messageMatch?.[1]?.trim() || "";
-    const reason = reasonMatch?.[1]?.trim() || "";
+    proc.on("error", (error) => {
+      console.error("Claude error:", error);
+      resolve({ shouldCheckin: false, message: "" });
+    });
 
-    console.log(`Decision: ${shouldCheckin ? "YES" : "NO"}`);
-    console.log(`Reason: ${reason}`);
+    proc.on("close", () => {
+      // Parse Claude's response
+      const decisionMatch = stdout.match(/DECISION:\s*(YES|NO)/i);
+      const messageMatch = stdout.match(/MESSAGE:\s*(.+?)(?=\nREASON:|$)/is);
+      const reasonMatch = stdout.match(/REASON:\s*(.+)/is);
 
-    return { shouldCheckin, message };
-  } catch (error) {
-    console.error("Claude error:", error);
-    return { shouldCheckin: false, message: "" };
-  }
+      const shouldCheckin = decisionMatch?.[1]?.toUpperCase() === "YES";
+      const message = messageMatch?.[1]?.trim() || "";
+      const reason = reasonMatch?.[1]?.trim() || "";
+
+      console.log(`Decision: ${shouldCheckin ? "YES" : "NO"}`);
+      console.log(`Reason: ${reason}`);
+
+      resolve({ shouldCheckin, message });
+    });
+  });
 }
 
 // ============================================================
@@ -201,34 +203,34 @@ main();
 // ============================================================
 // SCHEDULING
 // ============================================================
-/*
-Run every 30 minutes:
-
-CRON (Linux):
-*/30 * * * * cd /path/to/relay && bun run examples/smart-checkin.ts
-
-LAUNCHD (macOS) - save as ~/Library/LaunchAgents/com.claude.smart-checkin.plist:
-
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "...">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.claude.smart-checkin</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/Users/YOU/.bun/bin/bun</string>
-        <string>run</string>
-        <string>examples/smart-checkin.ts</string>
-    </array>
-    <key>WorkingDirectory</key>
-    <string>/path/to/relay</string>
-    <key>StartInterval</key>
-    <integer>1800</integer>  <!-- 30 minutes in seconds -->
-</dict>
-</plist>
-
-WINDOWS Task Scheduler:
-- Create task with "Daily" trigger
-- Set to repeat every 30 minutes
-*/
+//
+// Run every 30 minutes:
+//
+// CRON (Linux):
+// */30 * * * * cd /path/to/relay && npx tsx examples/smart-checkin.ts
+//
+// LAUNCHD (macOS) - save as ~/Library/LaunchAgents/com.claude.smart-checkin.plist:
+//
+// <?xml version="1.0" encoding="UTF-8"?>
+// <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "...">
+// <plist version="1.0">
+// <dict>
+//     <key>Label</key>
+//     <string>com.claude.smart-checkin</string>
+//     <key>ProgramArguments</key>
+//     <array>
+//         <string>npx</string>
+//         <string>tsx</string>
+//         <string>examples/smart-checkin.ts</string>
+//     </array>
+//     <key>WorkingDirectory</key>
+//     <string>/path/to/relay</string>
+//     <key>StartInterval</key>
+//     <integer>1800</integer>
+// </dict>
+// </plist>
+//
+// WINDOWS Task Scheduler:
+// - Create task with "Daily" trigger
+// - Set to repeat every 30 minutes
+//

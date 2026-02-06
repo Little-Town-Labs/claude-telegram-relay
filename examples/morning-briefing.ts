@@ -12,8 +12,8 @@
  * Run manually: bun run examples/morning-briefing.ts
  */
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
-const CHAT_ID = process.env.TELEGRAM_USER_ID || "";
+const BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"] || "";
+const CHAT_ID = process.env["TELEGRAM_USER_ID"] || "";
 
 // ============================================================
 // TELEGRAM HELPER
@@ -21,18 +21,15 @@ const CHAT_ID = process.env.TELEGRAM_USER_ID || "";
 
 async function sendTelegram(message: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          text: message,
-          parse_mode: "Markdown",
-        }),
-      }
-    );
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+        parse_mode: "Markdown",
+      }),
+    });
 
     return response.ok;
   } catch (error) {
@@ -149,7 +146,7 @@ async function buildBriefing(): Promise<string> {
   }
 
   // Footer
-  sections.push("---\n_Reply to chat or say \"call me\" for voice briefing_");
+  sections.push('---\n_Reply to chat or say "call me" for voice briefing_');
 
   return sections.join("\n");
 }

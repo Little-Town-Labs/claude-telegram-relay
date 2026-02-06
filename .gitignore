@@ -5,8 +5,8 @@
 # Dependencies
 node_modules/
 
-# Bun
-bun.lockb
+# Build
+dist/
 
 # Runtime files
 *.lock

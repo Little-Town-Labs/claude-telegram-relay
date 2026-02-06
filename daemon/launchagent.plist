@@ -9,9 +9,8 @@
     <!-- Command to run -->
     <key>ProgramArguments</key>
     <array>
-        <!-- UPDATE THIS: Path to bun -->
-        <string>/Users/YOUR_USERNAME/.bun/bin/bun</string>
-        <string>run</string>
+        <string>npx</string>
+        <string>tsx</string>
         <string>src/relay.ts</string>
     </array>
 
@@ -24,8 +23,8 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <!-- UPDATE THIS: Include paths to bun, node, claude -->
-        <string>/Users/YOUR_USERNAME/.bun/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <!-- UPDATE THIS: Include paths to node, npm, npx, claude -->
+        <string>/usr/local/bin:/usr/bin:/bin</string>
         <key>HOME</key>
         <!-- UPDATE THIS -->
         <string>/Users/YOUR_USERNAME</string>
