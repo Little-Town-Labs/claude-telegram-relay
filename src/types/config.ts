@@ -1,0 +1,55 @@
+/**
+ * Configuration types for the Claude Telegram Relay
+ */
+
+export interface AppConfig {
+  /** Telegram bot token from @BotFather */
+  botToken: string;
+
+  /** Telegram user ID allowed to use the bot (empty = any user) */
+  allowedUserId: string;
+
+  /** Path to Claude CLI executable */
+  claudePath: string;
+
+  /** Base directory for relay data */
+  relayDir: string;
+
+  /** Directory for temporary files */
+  tempDir: string;
+
+  /** Directory for uploaded files */
+  uploadsDir: string;
+
+  /** Path to session file */
+  sessionFile: string;
+
+  /** Path to lock file */
+  lockFile: string;
+
+  /** Optional: Supabase URL for cloud persistence */
+  supabaseUrl?: string;
+
+  /** Optional: Supabase anonymous key */
+  supabaseAnonKey?: string;
+
+  /** Optional: Memory file path for local persistence */
+  memoryFile?: string;
+
+  /** Environment mode */
+  nodeEnv: "development" | "production" | "test";
+
+  /** Log level */
+  logLevel: "debug" | "info" | "warn" | "error";
+}
+
+export interface ClaudeCallOptions {
+  /** Resume previous session if available */
+  resume?: boolean;
+
+  /** Path to image file to include in prompt */
+  imagePath?: string;
+
+  /** Timeout for Claude CLI call in milliseconds */
+  timeout?: number;
+}

@@ -1,0 +1,71 @@
+{
+  "project": {
+    "name": "claude-telegram-relay",
+    "description": "Minimal relay connecting Telegram to Claude Code CLI",
+    "primary_language": "typescript",
+    "version": "1.0.0"
+  },
+  "tech_stack": {
+    "backend": [
+      "node.js",
+      "typescript",
+      "grammy",
+      "pino"
+    ],
+    "infrastructure": [
+      "systemd",
+      "launchd",
+      "pm2"
+    ],
+    "testing": [
+      "vitest"
+    ],
+    "tooling": [
+      "tsx",
+      "biome",
+      "zod"
+    ]
+  },
+  "recommended_agents": {
+    "backend": [
+      "backend-developer"
+    ],
+    "review": [
+      "code-reviewer"
+    ],
+    "orchestration": [
+      "tech-lead-orchestrator"
+    ]
+  },
+  "commands": {
+    "test": {
+      "all": "npm test",
+      "watch": "npm run test:watch",
+      "coverage": "npm run test:coverage"
+    },
+    "build": {
+      "typecheck": "npm run typecheck"
+    },
+    "dev": {
+      "relay": "npm run relay",
+      "modular": "npm run dev"
+    },
+    "lint": {
+      "check": "npm run lint",
+      "fix": "npm run lint:fix",
+      "format": "npm run format"
+    }
+  },
+  "testing": {
+    "framework": "vitest",
+    "coverage_minimum": 80,
+    "run_before_commit": true,
+    "test_directory": "tests/"
+  },
+  "conventions": {
+    "code_style": "Biome for linting and formatting",
+    "branch_naming": "feature/*, bugfix/*, hotfix/*",
+    "commit_format": "conventional commits",
+    "pre_commit_hooks": false
+  }
+}
