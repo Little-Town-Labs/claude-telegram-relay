@@ -34,7 +34,21 @@ export const configSchema = z.object({
 
   supabaseAnonKey: z.string().optional().describe("Supabase anonymous key"),
 
-  memoryFile: z.string().optional().describe("Path to local memory JSON file"),
+  memoryFile: z.string().default("").describe("Path to local memory JSON file"),
+
+  sessionTtlMs: z
+    .number()
+    .int()
+    .positive()
+    .default(86400000)
+    .describe("Session inactivity timeout in milliseconds (default 24h)"),
+
+  cliTimeoutMs: z
+    .number()
+    .int()
+    .positive()
+    .default(120000)
+    .describe("Default timeout for Claude CLI invocations in milliseconds (default 2min)"),
 });
 
 export type ConfigInput = z.input<typeof configSchema>;
@@ -53,6 +67,12 @@ export function parseEnvVars(): ConfigInput {
     logLevel: (process.env["LOG_LEVEL"] as ConfigOutput["logLevel"]) || "info",
     supabaseUrl: process.env["SUPABASE_URL"],
     supabaseAnonKey: process.env["SUPABASE_ANON_KEY"],
-    memoryFile: process.env["MEMORY_FILE"],
+    memoryFile: process.env["MEMORY_FILE"] || "",
+    sessionTtlMs: process.env["SESSION_TTL_MS"]
+      ? Number.parseInt(process.env["SESSION_TTL_MS"], 10)
+      : undefined,
+    cliTimeoutMs: process.env["CLI_TIMEOUT_MS"]
+      ? Number.parseInt(process.env["CLI_TIMEOUT_MS"], 10)
+      : undefined,
   };
 }

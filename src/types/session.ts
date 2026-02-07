@@ -9,8 +9,8 @@ export interface SessionState {
   /** ISO timestamp of last activity */
   lastActivity: string;
 
-  /** Optional: Number of messages in this session */
-  messageCount?: number;
+  /** Number of messages in this session */
+  messageCount: number;
 }
 
 export interface SessionManager {

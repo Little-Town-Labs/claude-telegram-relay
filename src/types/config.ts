@@ -33,8 +33,14 @@ export interface AppConfig {
   /** Optional: Supabase anonymous key */
   supabaseAnonKey?: string;
 
-  /** Optional: Memory file path for local persistence */
-  memoryFile?: string;
+  /** Memory file path for local persistence */
+  memoryFile: string;
+
+  /** Session inactivity timeout in milliseconds */
+  sessionTtlMs: number;
+
+  /** Default timeout for Claude CLI invocations in milliseconds */
+  cliTimeoutMs: number;
 
   /** Environment mode */
   nodeEnv: "development" | "production" | "test";

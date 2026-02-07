@@ -34,6 +34,7 @@ describe("Config Loader", () => {
     expect(config.uploadsDir).toBe("/tmp/test-relay/uploads");
     expect(config.sessionFile).toBe("/tmp/test-relay/session.json");
     expect(config.lockFile).toBe("/tmp/test-relay/bot.lock");
+    expect(config.memoryFile).toBe("/tmp/test-relay/memory.json");
   });
 
   test("throws on missing bot token", () => {
@@ -57,6 +58,37 @@ describe("Config Loader", () => {
     expect(config.allowedUserId).toBe("");
     expect(config.claudePath).toBe("claude");
     expect(config.logLevel).toBe("info");
+  });
+
+  test("uses default sessionTtlMs and cliTimeoutMs", () => {
+    const config = loadConfig();
+
+    expect(config.sessionTtlMs).toBe(86400000);
+    expect(config.cliTimeoutMs).toBe(120000);
+  });
+
+  test("reads sessionTtlMs and cliTimeoutMs from environment", () => {
+    restoreEnv();
+    restoreEnv = mockEnv({
+      SESSION_TTL_MS: "3600000",
+      CLI_TIMEOUT_MS: "60000",
+    });
+
+    const config = loadConfig();
+
+    expect(config.sessionTtlMs).toBe(3600000);
+    expect(config.cliTimeoutMs).toBe(60000);
+  });
+
+  test("reads MEMORY_FILE from environment", () => {
+    restoreEnv();
+    restoreEnv = mockEnv({
+      MEMORY_FILE: "/custom/memory.json",
+    });
+
+    const config = loadConfig();
+
+    expect(config.memoryFile).toBe("/custom/memory.json");
   });
 
   describe("validateConfig", () => {

@@ -28,6 +28,7 @@ export function loadConfig(): AppConfig {
       uploadsDir: join(relayDir, "uploads"),
       sessionFile: join(relayDir, "session.json"),
       lockFile: join(relayDir, "bot.lock"),
+      memoryFile: validated.memoryFile || join(relayDir, "memory.json"),
     };
   } catch (error) {
     if (error instanceof ZodError) {

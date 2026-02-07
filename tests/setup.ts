@@ -2,6 +2,7 @@
  * Test setup and fixtures
  */
 
+import { EventEmitter } from "events";
 import { vi } from "vitest";
 
 // Re-export vitest mock as 'mock' for compatibility
@@ -97,7 +98,7 @@ interface MockContext {
 }
 
 /**
- * Mock Claude CLI spawn
+ * Mock Claude CLI spawn (legacy Bun-style ReadableStream)
  */
 export function createMockSpawn(output: string, exitCode = 0) {
   return mock(() => ({
@@ -114,4 +115,43 @@ export function createMockSpawn(output: string, exitCode = 0) {
     }),
     exited: Promise.resolve(exitCode),
   }));
+}
+
+/**
+ * Mock Node.js child_process.spawn ChildProcess
+ * Returns an object that mimics ChildProcess with EventEmitter-based
+ * stdout/stderr streams and a close event.
+ */
+export function createMockSpawnNode(
+  output: string,
+  exitCode = 0,
+  options?: { stderr?: string; delay?: number }
+) {
+  const stdout = new EventEmitter();
+  const stderr = new EventEmitter();
+  const proc = new EventEmitter() as EventEmitter & {
+    stdout: EventEmitter;
+    stderr: EventEmitter;
+    pid: number;
+    kill: ReturnType<typeof mock>;
+  };
+
+  proc.stdout = stdout;
+  proc.stderr = stderr;
+  proc.pid = 12345;
+  proc.kill = mock(() => true);
+
+  // Emit data and close asynchronously
+  const delay = options?.delay ?? 0;
+  setTimeout(() => {
+    if (output) {
+      stdout.emit("data", Buffer.from(output));
+    }
+    if (options?.stderr) {
+      stderr.emit("data", Buffer.from(options.stderr));
+    }
+    proc.emit("close", exitCode);
+  }, delay);
+
+  return proc;
 }
