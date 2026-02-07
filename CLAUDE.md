@@ -293,3 +293,10 @@ See the `templates/` directory in the [LTLClaude repository](https://github.com/
 - **Security**: Watch for common vulnerabilities (XSS, SQL injection, command injection, etc.)
 - **Simplicity**: The right amount of complexity is the minimum needed for the current task
 - **No time estimates**: Never provide time estimates or predictions for how long work will take
+
+## Active Technologies
+- TypeScript 5.9+ on Node.js 18+ + grammy 1.21+, pino 9.5+, zod 3.24+ (001-modular-service-layer)
+- Local JSON files (`~/.claude-relay/session.json`, `~/.claude-relay/memory.json`) (001-modular-service-layer)
+
+## Recent Changes
+- 001-modular-service-layer: Added TypeScript 5.9+ on Node.js 18+ + grammy 1.21+, pino 9.5+, zod 3.24+
