@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Logger } from "pino";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { MemoryService } from "../../../src/services/memory";
 
 // Mock fs/promises
@@ -30,12 +30,8 @@ describe("MemoryService", () => {
     test("returns persisted memory from valid file", async () => {
       const mockMemory = {
         facts: ["fact1", "fact2"],
-        goals: [
-          { text: "goal1", createdAt: "2025-01-15T12:00:00.000Z" },
-        ],
-        completedGoals: [
-          { text: "done1", completedAt: "2025-01-15T11:00:00.000Z" },
-        ],
+        goals: [{ text: "goal1", createdAt: "2025-01-15T12:00:00.000Z" }],
+        completedGoals: [{ text: "done1", completedAt: "2025-01-15T11:00:00.000Z" }],
       };
 
       const fs = await import("fs/promises");
@@ -95,10 +91,7 @@ describe("MemoryService", () => {
         testMemoryFile + ".tmp",
         JSON.stringify(memory, null, 2)
       );
-      expect(fs.rename).toHaveBeenCalledWith(
-        testMemoryFile + ".tmp",
-        testMemoryFile
-      );
+      expect(fs.rename).toHaveBeenCalledWith(testMemoryFile + ".tmp", testMemoryFile);
     });
 
     test("persists all fields correctly", async () => {
@@ -111,9 +104,7 @@ describe("MemoryService", () => {
             createdAt: "2025-01-15T12:00:00.000Z",
           },
         ],
-        completedGoals: [
-          { text: "finish project", completedAt: "2025-01-14T10:00:00.000Z" },
-        ],
+        completedGoals: [{ text: "finish project", completedAt: "2025-01-14T10:00:00.000Z" }],
       };
 
       const fs = await import("fs/promises");
@@ -211,10 +202,7 @@ describe("MemoryService", () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2025-01-15T12:00:00Z"));
 
-      const result = await memoryService.addGoal(
-        "finish project",
-        "tomorrow"
-      );
+      const result = await memoryService.addGoal("finish project", "tomorrow");
 
       expect(result).toBe("Goal set: finish project (deadline: tomorrow)");
 
@@ -274,9 +262,7 @@ describe("MemoryService", () => {
       expect(writtenData.goals[0].text).toBe("finish project");
       expect(writtenData.completedGoals).toHaveLength(1);
       expect(writtenData.completedGoals[0].text).toBe("learn TypeScript");
-      expect(writtenData.completedGoals[0].completedAt).toBe(
-        now.toISOString()
-      );
+      expect(writtenData.completedGoals[0].completedAt).toBe(now.toISOString());
 
       vi.useRealTimers();
     });

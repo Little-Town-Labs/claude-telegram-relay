@@ -19,17 +19,17 @@
 
 **Purpose**: Types, config extensions, and frontmatter utility that all services depend on
 
-- [ ] T001 Define SecondBrain types (Category, Classification, CaptureResult, ScannedDocument, CaptureStats, WeeklySummary, FixResult, SecondBrainConfig) in `src/types/secondbrain.ts`
-- [ ] T002 Add SecondBrain config section to Zod schema and parseEnvVars in `src/config/schema.ts` (include `chatId` field defaulting to `TELEGRAM_USER_ID` for scheduled digest delivery)
-- [ ] T003 Add `secondbrain?: SecondBrainConfig` field to AppConfig interface in `src/types/config.ts`
-- [ ] T004 Re-export secondbrain types from `src/types/index.ts`
-- [ ] T005 Write frontmatter tests (parse flat key-values, arrays, numbers/booleans, roundtrip, edge cases) in `tests/unit/utils/frontmatter.test.ts`
-- [ ] T006 Implement parseFrontmatter and stringifyFrontmatter in `src/utils/frontmatter.ts`
-- [ ] T007 Export frontmatter utilities from `src/utils/index.ts`
-- [ ] T008 Create classification prompt template in `src/prompts/classify.txt`
-- [ ] T009 [P] Create daily digest prompt template in `src/prompts/daily_digest.txt`
-- [ ] T010 [P] Create weekly review prompt template in `src/prompts/weekly_review.txt`
-- [ ] T011 Verify Phase 1: run `npm run typecheck` and `npm test` — all pass
+- [x] T001 Define SecondBrain types (Category, Classification, CaptureResult, ScannedDocument, CaptureStats, WeeklySummary, FixResult, SecondBrainConfig) in `src/types/secondbrain.ts`
+- [x] T002 Add SecondBrain config section to Zod schema and parseEnvVars in `src/config/schema.ts` (include `chatId` field defaulting to `TELEGRAM_USER_ID` for scheduled digest delivery)
+- [x] T003 Add `secondbrain?: SecondBrainConfig` field to AppConfig interface in `src/types/config.ts`
+- [x] T004 Re-export secondbrain types from `src/types/index.ts`
+- [x] T005 Write frontmatter tests (parse flat key-values, arrays, numbers/booleans, roundtrip, edge cases) in `tests/unit/utils/frontmatter.test.ts`
+- [x] T006 Implement parseFrontmatter and stringifyFrontmatter in `src/utils/frontmatter.ts`
+- [x] T007 Export frontmatter utilities from `src/utils/index.ts`
+- [x] T008 Create classification prompt template in `src/prompts/classify.txt`
+- [x] T009 [P] Create daily digest prompt template in `src/prompts/daily_digest.txt`
+- [x] T010 [P] Create weekly review prompt template in `src/prompts/weekly_review.txt`
+- [x] T011 Verify Phase 1: run `npm run typecheck` and `npm test` — all pass
 
 **Checkpoint**: Types, config, frontmatter, and prompt templates ready. All subsequent services can now be built.
 

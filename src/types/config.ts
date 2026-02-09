@@ -47,6 +47,9 @@ export interface AppConfig {
 
   /** Log level */
   logLevel: "debug" | "info" | "warn" | "error";
+
+  /** SecondBrain configuration (optional, disabled by default) */
+  secondbrain?: import("./secondbrain").SecondBrainConfig;
 }
 
 export interface ClaudeCallOptions {

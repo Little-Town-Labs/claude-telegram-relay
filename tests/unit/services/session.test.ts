@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Logger } from "pino";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { SessionManager } from "../../../src/services/session";
 
 // Mock fs/promises
@@ -157,9 +157,7 @@ describe("SessionManager", () => {
         lastActivity: now.toISOString(),
         messageCount: 0,
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringContaining("expired")
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining("expired"));
 
       vi.useRealTimers();
     });
@@ -230,10 +228,7 @@ describe("SessionManager", () => {
         testSessionFile + ".tmp",
         JSON.stringify(state, null, 2)
       );
-      expect(fs.rename).toHaveBeenCalledWith(
-        testSessionFile + ".tmp",
-        testSessionFile
-      );
+      expect(fs.rename).toHaveBeenCalledWith(testSessionFile + ".tmp", testSessionFile);
     });
 
     test("persists all fields correctly", async () => {
@@ -283,9 +278,7 @@ describe("SessionManager", () => {
       vi.mocked(fs.writeFile).mockResolvedValue(undefined);
       vi.mocked(fs.rename).mockRejectedValue(new Error("Permission denied"));
 
-      await expect(sessionManager.save(state)).rejects.toThrow(
-        "Permission denied"
-      );
+      await expect(sessionManager.save(state)).rejects.toThrow("Permission denied");
     });
   });
 
@@ -336,9 +329,7 @@ describe("SessionManager", () => {
       const writeCall = vi.mocked(fs.writeFile).mock.calls[0]!;
       const writtenData = JSON.parse(writeCall[1] as string);
       expect(writtenData.lastActivity).toBe(now.toISOString());
-      expect(new Date(writtenData.lastActivity).getTime()).toBeGreaterThan(
-        oldTime.getTime()
-      );
+      expect(new Date(writtenData.lastActivity).getTime()).toBeGreaterThan(oldTime.getTime());
 
       vi.useRealTimers();
     });
@@ -425,14 +416,8 @@ describe("SessionManager", () => {
 
       await sessionManager.clear();
 
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        testSessionFile + ".tmp",
-        expect.any(String)
-      );
-      expect(fs.rename).toHaveBeenCalledWith(
-        testSessionFile + ".tmp",
-        testSessionFile
-      );
+      expect(fs.writeFile).toHaveBeenCalledWith(testSessionFile + ".tmp", expect.any(String));
+      expect(fs.rename).toHaveBeenCalledWith(testSessionFile + ".tmp", testSessionFile);
     });
 
     test("clears existing session data", async () => {
