@@ -50,22 +50,11 @@ export function parseFrontmatter(fileContent: string): FrontmatterResult {
     const rawValue = (match[2] as string).trim();
 
     // Check if next lines are array items
-    if (rawValue === "" && i + 1 < lines.length) {
-      const nextLine = lines[i + 1] as string;
-      if (/^\s+-\s/.test(nextLine)) {
-        // Parse array
-        const items: string[] = [];
-        i++;
-        while (i < lines.length && /^\s+-\s/.test(lines[i] as string)) {
-          const itemMatch = /^\s+-\s+(.*)$/.exec(lines[i] as string);
-          if (itemMatch) {
-            items.push((itemMatch[1] as string).trim());
-          }
-          i++;
-        }
-        metadata[key] = items;
-        continue;
-      }
+    if (rawValue === "" && i + 1 < lines.length && /^\s+-\s/.test(lines[i + 1] as string)) {
+      const result = parseArrayItems(lines, i + 1);
+      metadata[key] = result.items;
+      i = result.nextIndex;
+      continue;
     }
 
     metadata[key] = parseValue(rawValue);
@@ -97,6 +86,22 @@ export function stringifyFrontmatter(metadata: Record<string, unknown>, content:
   lines.push(content);
 
   return lines.join("\n");
+}
+
+function parseArrayItems(
+  lines: string[],
+  startIndex: number
+): { items: string[]; nextIndex: number } {
+  const items: string[] = [];
+  let i = startIndex;
+  while (i < lines.length && /^\s+-\s/.test(lines[i] as string)) {
+    const itemMatch = /^\s+-\s+(.*)$/.exec(lines[i] as string);
+    if (itemMatch) {
+      items.push((itemMatch[1] as string).trim());
+    }
+    i++;
+  }
+  return { items, nextIndex: i };
 }
 
 function parseValue(raw: string): unknown {

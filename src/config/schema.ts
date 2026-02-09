@@ -87,6 +87,40 @@ export type ConfigInput = z.input<typeof configSchema>;
 export type ConfigOutput = z.output<typeof configSchema>;
 
 /**
+ * Parse SecondBrain-specific env vars into config input.
+ */
+function parseSecondBrainEnvVars(): ConfigInput["secondbrain"] {
+  if (process.env["SECONDBRAIN_ENABLED"] !== "true") return undefined;
+
+  return {
+    enabled: true,
+    dataDir: process.env["SECONDBRAIN_DATA_DIR"] || join(homeDir, ".claude-relay", "secondbrain"),
+    confidenceThreshold: process.env["SECONDBRAIN_CONFIDENCE_THRESHOLD"]
+      ? Number.parseFloat(process.env["SECONDBRAIN_CONFIDENCE_THRESHOLD"])
+      : 0.6,
+    chatId: process.env["TELEGRAM_USER_ID"] || "",
+    gitEnabled: process.env["SECONDBRAIN_GIT_ENABLED"] === "true",
+    gitAutoCommit: process.env["SECONDBRAIN_GIT_AUTOCOMMIT"] === "true",
+    digest: {
+      daily: {
+        enabled: process.env["SECONDBRAIN_DIGEST_DAILY_ENABLED"] !== "false",
+        time: process.env["SECONDBRAIN_DIGEST_DAILY_TIME"] || "07:00",
+        timezone: process.env["SECONDBRAIN_DIGEST_DAILY_TIMEZONE"] || "America/Chicago",
+        limit: process.env["SECONDBRAIN_DIGEST_DAILY_LIMIT"]
+          ? Number.parseInt(process.env["SECONDBRAIN_DIGEST_DAILY_LIMIT"], 10)
+          : 3,
+      },
+      weekly: {
+        enabled: process.env["SECONDBRAIN_DIGEST_WEEKLY_ENABLED"] !== "false",
+        day: process.env["SECONDBRAIN_DIGEST_WEEKLY_DAY"] || "sunday",
+        time: process.env["SECONDBRAIN_DIGEST_WEEKLY_TIME"] || "16:00",
+        timezone: process.env["SECONDBRAIN_DIGEST_WEEKLY_TIMEZONE"] || "America/Chicago",
+      },
+    },
+  };
+}
+
+/**
  * Parse environment variables into config input
  */
 export function parseEnvVars(): ConfigInput {
@@ -106,35 +140,6 @@ export function parseEnvVars(): ConfigInput {
     cliTimeoutMs: process.env["CLI_TIMEOUT_MS"]
       ? Number.parseInt(process.env["CLI_TIMEOUT_MS"], 10)
       : undefined,
-    secondbrain:
-      process.env["SECONDBRAIN_ENABLED"] === "true"
-        ? {
-            enabled: true,
-            dataDir:
-              process.env["SECONDBRAIN_DATA_DIR"] || join(homeDir, ".claude-relay", "secondbrain"),
-            confidenceThreshold: process.env["SECONDBRAIN_CONFIDENCE_THRESHOLD"]
-              ? Number.parseFloat(process.env["SECONDBRAIN_CONFIDENCE_THRESHOLD"])
-              : 0.6,
-            chatId: process.env["TELEGRAM_USER_ID"] || "",
-            gitEnabled: process.env["SECONDBRAIN_GIT_ENABLED"] === "true",
-            gitAutoCommit: process.env["SECONDBRAIN_GIT_AUTOCOMMIT"] === "true",
-            digest: {
-              daily: {
-                enabled: process.env["SECONDBRAIN_DIGEST_DAILY_ENABLED"] !== "false",
-                time: process.env["SECONDBRAIN_DIGEST_DAILY_TIME"] || "07:00",
-                timezone: process.env["SECONDBRAIN_DIGEST_DAILY_TIMEZONE"] || "America/Chicago",
-                limit: process.env["SECONDBRAIN_DIGEST_DAILY_LIMIT"]
-                  ? Number.parseInt(process.env["SECONDBRAIN_DIGEST_DAILY_LIMIT"], 10)
-                  : 3,
-              },
-              weekly: {
-                enabled: process.env["SECONDBRAIN_DIGEST_WEEKLY_ENABLED"] !== "false",
-                day: process.env["SECONDBRAIN_DIGEST_WEEKLY_DAY"] || "sunday",
-                time: process.env["SECONDBRAIN_DIGEST_WEEKLY_TIME"] || "16:00",
-                timezone: process.env["SECONDBRAIN_DIGEST_WEEKLY_TIMEZONE"] || "America/Chicago",
-              },
-            },
-          }
-        : undefined,
+    secondbrain: parseSecondBrainEnvVars(),
   };
 }
