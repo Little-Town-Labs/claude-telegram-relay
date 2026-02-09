@@ -8,7 +8,6 @@
  */
 
 import { execFile } from "child_process";
-import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { mkdir } from "fs/promises";
 import { Bot } from "grammy";
@@ -235,13 +234,10 @@ async function startBot(config: AppConfig): Promise<void> {
       const session = await sessionManager.load();
       const memoryContext = await memoryService.getContext();
       const prompt = claudeService.buildPrompt(text, memoryContext || undefined);
-      const response = await claudeService.call(prompt, {
-        resume: session.sessionId !== null,
-      });
+      const response = await claudeService.call(prompt);
 
-      // Update session with activity (use existing sessionId or generate placeholder)
-      const sessionId = session.sessionId ?? randomUUID();
-      await sessionManager.updateActivity(sessionId);
+      // Update session activity tracking (no CLI session resumption)
+      await sessionManager.updateActivity();
 
       // Process intent markers from Claude's response
       const { cleaned, intents, confirmations } = claudeService.detectIntents(response);

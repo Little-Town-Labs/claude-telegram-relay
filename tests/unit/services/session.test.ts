@@ -283,10 +283,10 @@ describe("SessionManager", () => {
   });
 
   describe("updateActivity()", () => {
-    test("updates sessionId field", async () => {
+    test("preserves sessionId field", async () => {
       const fs = await import("fs/promises");
       const initialState = {
-        sessionId: null,
+        sessionId: "existing-session",
         lastActivity: new Date("2025-01-15T12:00:00Z").toISOString(),
         messageCount: 0,
       };
@@ -298,11 +298,11 @@ describe("SessionManager", () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2025-01-15T13:00:00Z"));
 
-      await sessionManager.updateActivity("new-session-789");
+      await sessionManager.updateActivity();
 
       const writeCall = vi.mocked(fs.writeFile).mock.calls[0]!;
       const writtenData = JSON.parse(writeCall[1] as string);
-      expect(writtenData.sessionId).toBe("new-session-789");
+      expect(writtenData.sessionId).toBe("existing-session");
 
       vi.useRealTimers();
     });
@@ -324,7 +324,7 @@ describe("SessionManager", () => {
       const now = new Date("2025-01-15T12:00:00Z");
       vi.setSystemTime(now);
 
-      await sessionManager.updateActivity("existing-session");
+      await sessionManager.updateActivity();
 
       const writeCall = vi.mocked(fs.writeFile).mock.calls[0]!;
       const writtenData = JSON.parse(writeCall[1] as string);
@@ -349,7 +349,7 @@ describe("SessionManager", () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2025-01-15T13:00:00Z"));
 
-      await sessionManager.updateActivity("count-test");
+      await sessionManager.updateActivity();
 
       const writeCall = vi.mocked(fs.writeFile).mock.calls[0]!;
       const writtenData = JSON.parse(writeCall[1] as string);
@@ -374,12 +374,12 @@ describe("SessionManager", () => {
       const now = new Date("2025-01-15T12:00:00Z");
       vi.setSystemTime(now);
 
-      await sessionManager.updateActivity("updated-session");
+      await sessionManager.updateActivity();
 
       const writeCall = vi.mocked(fs.writeFile).mock.calls[0]!;
       const writtenData = JSON.parse(writeCall[1] as string);
 
-      expect(writtenData.sessionId).toBe("updated-session");
+      expect(writtenData.sessionId).toBe("old-session");
       expect(writtenData.lastActivity).toBe(now.toISOString());
       expect(writtenData.messageCount).toBe(4);
 
@@ -462,31 +462,11 @@ describe("SessionManager", () => {
       vi.mocked(fs.writeFile).mockResolvedValue(undefined);
       vi.mocked(fs.rename).mockResolvedValue(undefined);
 
-      await sessionManager.updateActivity("large-count");
+      await sessionManager.updateActivity();
 
       const writeCall = vi.mocked(fs.writeFile).mock.calls[0]!;
       const writtenData = JSON.parse(writeCall[1] as string);
       expect(writtenData.messageCount).toBe(Number.MAX_SAFE_INTEGER);
-    });
-
-    test("handles sessionId with special characters", async () => {
-      const fs = await import("fs/promises");
-      vi.mocked(fs.readFile).mockResolvedValue(
-        JSON.stringify({
-          sessionId: null,
-          lastActivity: new Date().toISOString(),
-          messageCount: 0,
-        })
-      );
-      vi.mocked(fs.writeFile).mockResolvedValue(undefined);
-      vi.mocked(fs.rename).mockResolvedValue(undefined);
-
-      const specialSessionId = "session-with-特殊字符-émojis-🚀-and-quotes\"'";
-      await sessionManager.updateActivity(specialSessionId);
-
-      const writeCall = vi.mocked(fs.writeFile).mock.calls[0]!;
-      const writtenData = JSON.parse(writeCall[1] as string);
-      expect(writtenData.sessionId).toBe(specialSessionId);
     });
 
     test("handles rapid consecutive updates", async () => {
@@ -501,9 +481,9 @@ describe("SessionManager", () => {
       vi.mocked(fs.writeFile).mockResolvedValue(undefined);
       vi.mocked(fs.rename).mockResolvedValue(undefined);
 
-      await sessionManager.updateActivity("rapid-1");
-      await sessionManager.updateActivity("rapid-2");
-      await sessionManager.updateActivity("rapid-3");
+      await sessionManager.updateActivity();
+      await sessionManager.updateActivity();
+      await sessionManager.updateActivity();
 
       expect(fs.writeFile).toHaveBeenCalledTimes(3);
       expect(fs.rename).toHaveBeenCalledTimes(3);

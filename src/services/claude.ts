@@ -32,8 +32,8 @@ export class ClaudeService {
 
     const args = ["--print", prompt];
 
-    if (options?.resume) {
-      args.push("--resume");
+    if (this.config.claudeModel) {
+      args.push("--model", this.config.claudeModel);
     }
 
     if (options?.imagePath) {

@@ -20,6 +20,8 @@ export const configSchema = z.object({
 
   claudePath: z.string().default("claude").describe("Path to Claude CLI executable"),
 
+  claudeModel: z.string().optional().describe("Claude model ID to use (e.g. claude-haiku-4-5-20251001)"),
+
   relayDir: z.string().default(defaultRelayDir).describe("Base directory for relay data"),
 
   nodeEnv: z
@@ -128,6 +130,7 @@ export function parseEnvVars(): ConfigInput {
     botToken: process.env["TELEGRAM_BOT_TOKEN"] || "",
     allowedUserId: process.env["TELEGRAM_USER_ID"] || "",
     claudePath: process.env["CLAUDE_PATH"] || "claude",
+    claudeModel: process.env["CLAUDE_MODEL"] || undefined,
     relayDir: process.env["RELAY_DIR"] || join(homeDir, ".claude-relay"),
     nodeEnv: (process.env["NODE_ENV"] as ConfigOutput["nodeEnv"]) || "development",
     logLevel: (process.env["LOG_LEVEL"] as ConfigOutput["logLevel"]) || "info",

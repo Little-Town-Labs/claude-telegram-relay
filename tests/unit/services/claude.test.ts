@@ -72,21 +72,6 @@ describe("ClaudeService", () => {
       expect(result).toBe("response to empty");
     });
 
-    test("passes --resume flag when resume option is true", async () => {
-      vi.mocked(spawn).mockImplementation(
-        (_cmd: string, _args?: readonly string[], _opts?: SpawnOptions) =>
-          createMockSpawnNode("resumed", 0) as any
-      );
-
-      await service.call("test", { resume: true });
-
-      expect(spawn).toHaveBeenCalledWith(
-        "/usr/bin/claude",
-        expect.arrayContaining(["--resume"]),
-        expect.any(Object)
-      );
-    });
-
     test("passes --image flag when imagePath option provided", async () => {
       vi.mocked(spawn).mockImplementation(
         (_cmd: string, _args?: readonly string[], _opts?: SpawnOptions) =>

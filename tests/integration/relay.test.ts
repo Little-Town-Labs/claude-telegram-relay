@@ -98,12 +98,12 @@ describe("Relay Integration", () => {
       expect(freshState.messageCount).toBe(0);
 
       // Update activity
-      await session.updateActivity("session-123");
+      await session.updateActivity();
 
       // Verify the saved state
       const writeCall = vi.mocked(fs.writeFile).mock.calls[0]!;
       const saved = JSON.parse(writeCall[1] as string);
-      expect(saved.sessionId).toBe("session-123");
+      expect(saved.sessionId).toBeNull();
       expect(saved.messageCount).toBe(1);
     });
 

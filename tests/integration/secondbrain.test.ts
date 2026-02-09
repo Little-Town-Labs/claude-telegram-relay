@@ -5,9 +5,9 @@
  * with mocked Claude CLI and real filesystem operations in a temp directory.
  */
 
-import { mkdtemp, readdir, readFile, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
+import { mkdtemp, readFile, readdir, rm } from "fs/promises";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { AppConfig } from "../../src/types";
@@ -100,7 +100,11 @@ describe("SecondBrain Integration", () => {
         const { Readable, Writable } = require("stream");
         const stdout = new Readable({ read() {} });
         const stderr = new Readable({ read() {} });
-        const stdin = new Writable({ write(_c: any, _e: any, cb: any) { cb(); } });
+        const stdin = new Writable({
+          write(_c: any, _e: any, cb: any) {
+            cb();
+          },
+        });
         const child = Object.assign(new (require("events").EventEmitter)(), {
           stdout,
           stderr,
@@ -179,7 +183,11 @@ describe("SecondBrain Integration", () => {
         const { Readable, Writable } = require("stream");
         const stdout = new Readable({ read() {} });
         const stderr = new Readable({ read() {} });
-        const stdin = new Writable({ write(_c: any, _e: any, cb: any) { cb(); } });
+        const stdin = new Writable({
+          write(_c: any, _e: any, cb: any) {
+            cb();
+          },
+        });
         const child = Object.assign(new (require("events").EventEmitter)(), {
           stdout,
           stderr,
@@ -225,7 +233,9 @@ describe("SecondBrain Integration", () => {
       const digestService = new DigestService(claudeService, synthesisService, config, logger);
 
       // Step 1: Capture a project thought
-      const result = await captureService.capture("Website redesign - need to review wireframes urgently");
+      const result = await captureService.capture(
+        "Website redesign - need to review wireframes urgently"
+      );
       expect(result.category).toBe("projects");
 
       // Step 2: Verify it's actionable
@@ -260,7 +270,11 @@ describe("SecondBrain Integration", () => {
         const { Readable, Writable } = require("stream");
         const stdout = new Readable({ read() {} });
         const stderr = new Readable({ read() {} });
-        const stdin = new Writable({ write(_c: any, _e: any, cb: any) { cb(); } });
+        const stdin = new Writable({
+          write(_c: any, _e: any, cb: any) {
+            cb();
+          },
+        });
         const child = Object.assign(new (require("events").EventEmitter)(), {
           stdout,
           stderr,
@@ -330,7 +344,11 @@ describe("SecondBrain Integration", () => {
           category: "projects",
           confidence: 0.85,
           reasoning: "Project update",
-          extracted_data: { name: "API Migration", status: "active", next_action: "Deploy staging" },
+          extracted_data: {
+            name: "API Migration",
+            status: "active",
+            next_action: "Deploy staging",
+          },
         }),
         // Weekly review generation
         "**Weekly Review - Feb 9, 2026**\n\nTotal captures: 2\nActive projects: API Migration\nPeople: Alice (follow-up pending)",
@@ -340,7 +358,11 @@ describe("SecondBrain Integration", () => {
         const { Readable, Writable } = require("stream");
         const stdout = new Readable({ read() {} });
         const stderr = new Readable({ read() {} });
-        const stdin = new Writable({ write(_c: any, _e: any, cb: any) { cb(); } });
+        const stdin = new Writable({
+          write(_c: any, _e: any, cb: any) {
+            cb();
+          },
+        });
         const child = Object.assign(new (require("events").EventEmitter)(), {
           stdout,
           stderr,

@@ -60,9 +60,8 @@ export class SessionManager {
   /**
    * Update session with new activity.
    */
-  async updateActivity(sessionId: string): Promise<void> {
+  async updateActivity(): Promise<void> {
     const state = await this.load();
-    state.sessionId = sessionId;
     state.lastActivity = new Date().toISOString();
     state.messageCount = (state.messageCount || 0) + 1;
     await this.save(state);
