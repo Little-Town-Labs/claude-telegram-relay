@@ -8,6 +8,7 @@
  */
 
 import { execFile } from "child_process";
+import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { mkdir } from "fs/promises";
 import { Bot } from "grammy";
@@ -239,7 +240,7 @@ async function startBot(config: AppConfig): Promise<void> {
       });
 
       // Update session with activity (use existing sessionId or generate placeholder)
-      const sessionId = session.sessionId ?? crypto.randomUUID();
+      const sessionId = session.sessionId ?? randomUUID();
       await sessionManager.updateActivity(sessionId);
 
       // Process intent markers from Claude's response
