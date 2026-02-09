@@ -78,12 +78,10 @@ describe("Media Handlers", () => {
 
       // Should call Claude with image prompt
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("[Image:"),
-        expect.objectContaining({})
+        expect.stringContaining("[Image:")
       );
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("What is this?"),
-        expect.objectContaining({})
+        expect.stringContaining("What is this?")
       );
 
       // Should return the response
@@ -182,8 +180,7 @@ describe("Media Handlers", () => {
       });
 
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("Analyze this image"),
-        expect.objectContaining({})
+        expect.stringContaining("Analyze this image")
       );
     });
   });
@@ -232,12 +229,10 @@ describe("Media Handlers", () => {
 
       expect(ctx.getFile).toHaveBeenCalled();
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("[File:"),
-        expect.objectContaining({})
+        expect.stringContaining("[File:")
       );
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("Summarize this"),
-        expect.objectContaining({})
+        expect.stringContaining("Summarize this")
       );
       expect(result).toBe("Summary: ...");
       expect(fs.unlink).toHaveBeenCalled();
@@ -307,8 +302,7 @@ describe("Media Handlers", () => {
       });
 
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("data.csv"),
-        expect.objectContaining({})
+        expect.stringContaining("data.csv")
       );
     });
   });

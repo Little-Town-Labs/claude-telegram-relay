@@ -231,7 +231,6 @@ async function startBot(config: AppConfig): Promise<void> {
     await ctx.replyWithChatAction("typing");
 
     queue.enqueue(async () => {
-      const session = await sessionManager.load();
       const memoryContext = await memoryService.getContext();
       const prompt = claudeService.buildPrompt(text, memoryContext || undefined);
       const response = await claudeService.call(prompt);
@@ -264,8 +263,7 @@ async function startBot(config: AppConfig): Promise<void> {
 
   // Media handler options
   const mediaOptions = {
-    claudeCall: (prompt: string, options: { resume?: boolean }) =>
-      claudeService.call(prompt, options),
+    claudeCall: (prompt: string) => claudeService.call(prompt),
     uploadsDir: config.uploadsDir,
     botToken: config.botToken,
     logger: createLogger("media"),
