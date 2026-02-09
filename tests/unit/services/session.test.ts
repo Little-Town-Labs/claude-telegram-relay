@@ -225,10 +225,10 @@ describe("SessionManager", () => {
       await sessionManager.save(state);
 
       expect(fs.writeFile).toHaveBeenCalledWith(
-        testSessionFile + ".tmp",
+        `${testSessionFile}.tmp`,
         JSON.stringify(state, null, 2)
       );
-      expect(fs.rename).toHaveBeenCalledWith(testSessionFile + ".tmp", testSessionFile);
+      expect(fs.rename).toHaveBeenCalledWith(`${testSessionFile}.tmp`, testSessionFile);
     });
 
     test("persists all fields correctly", async () => {
@@ -416,8 +416,8 @@ describe("SessionManager", () => {
 
       await sessionManager.clear();
 
-      expect(fs.writeFile).toHaveBeenCalledWith(testSessionFile + ".tmp", expect.any(String));
-      expect(fs.rename).toHaveBeenCalledWith(testSessionFile + ".tmp", testSessionFile);
+      expect(fs.writeFile).toHaveBeenCalledWith(`${testSessionFile}.tmp`, expect.any(String));
+      expect(fs.rename).toHaveBeenCalledWith(`${testSessionFile}.tmp`, testSessionFile);
     });
 
     test("clears existing session data", async () => {

@@ -14,9 +14,15 @@ import { Bot } from "grammy";
 
 import { validateConfig } from "./config";
 import {
+  CaptureService,
   ClaudeService,
+  DigestService,
+  FixerService,
   MemoryService,
+  ScannerService,
+  SchedulerService,
   SessionManager,
+  SynthesisService,
   handleDocument,
   handlePhoto,
   handleVoice,
@@ -119,6 +125,102 @@ async function startBot(config: AppConfig): Promise<void> {
     await sessionManager.clear();
     await ctx.reply("Session cleared. Starting fresh conversation.");
   });
+
+  // SecondBrain commands (only when enabled)
+  if (config.secondbrain?.enabled) {
+    const sbLog = createLogger("secondbrain");
+    const captureService = new CaptureService(config, claudeService, sbLog);
+    const scannerService = new ScannerService(config, sbLog);
+    const synthesisService = new SynthesisService(scannerService, config, sbLog);
+    const digestService = new DigestService(claudeService, synthesisService, config, sbLog);
+    const fixerService = new FixerService(config, sbLog);
+    const schedulerService = new SchedulerService(
+      digestService,
+      (chatId, text) => bot.api.sendMessage(chatId, text),
+      config,
+      sbLog
+    );
+
+    schedulerService.start();
+
+    bot.command("capture", async (ctx) => {
+      const text = ctx.match;
+      if (!text) {
+        await ctx.reply("Usage: /capture <your thought>");
+        return;
+      }
+      await ctx.replyWithChatAction("typing");
+      const result = await captureService.capture(text, ctx.from?.id.toString());
+      const reviewNote = result.needsReview ? " (needs review)" : "";
+      await ctx.reply(
+        `Captured as **${result.category}** (${(result.confidence * 100).toFixed(0)}% confidence)${reviewNote}\nFile: \`${result.filename}\``,
+        { parse_mode: "Markdown" }
+      );
+    });
+
+    bot.command("stats", async (ctx) => {
+      await ctx.replyWithChatAction("typing");
+      const stats = await synthesisService.getStats();
+      const lines = [
+        "**Capture Statistics**",
+        `Total: ${stats.total} | This week: ${stats.week} | Today: ${stats.today}`,
+        `Avg confidence: ${(stats.avgConfidence * 100).toFixed(0)}%`,
+        `Needs review: ${stats.needsReview}`,
+        "",
+        "**By Category:**",
+        ...Object.entries(stats.byCategory).map(([cat, count]) => `  ${cat}: ${count}`),
+      ];
+      await ctx.reply(lines.join("\n"), { parse_mode: "Markdown" });
+    });
+
+    bot.command("review", async (ctx) => {
+      await ctx.replyWithChatAction("typing");
+      const docs = await scannerService.getNeedsReview();
+      if (docs.length === 0) {
+        await ctx.reply("No items need review. All clear!");
+        return;
+      }
+      const lines = ["**Items Needing Review:**", ""];
+      for (const doc of docs) {
+        lines.push(`- \`${doc.filename}\` (${(doc.confidence * 100).toFixed(0)}%) — ${doc.title}`);
+      }
+      lines.push("", "Use `/fix <filename> <category>` to reclassify.");
+      await ctx.reply(lines.join("\n"), { parse_mode: "Markdown" });
+    });
+
+    bot.command("digest", async (ctx) => {
+      await ctx.replyWithChatAction("typing");
+      const isWeekly = ctx.match?.trim().toLowerCase() === "weekly";
+      const content = isWeekly
+        ? await digestService.generateWeeklyReview()
+        : await digestService.generateDailyDigest();
+      await ctx.reply(content);
+    });
+
+    bot.command("fix", async (ctx) => {
+      const args = ctx.match?.trim().split(/\s+/) ?? [];
+      if (args.length === 1 && args[0]) {
+        // /fix <category> — fix last capture
+        const filename = await fixerService.findLastUserFile(ctx.from?.id.toString() ?? "");
+        if (!filename) {
+          await ctx.reply("No recent captures found to fix.");
+          return;
+        }
+        const result = await fixerService.fixCapture(args[0], filename, ctx.from?.id.toString());
+        await ctx.reply(result.message);
+      } else if (args.length >= 2 && args[0] && args[1]) {
+        // /fix <filename> <category>
+        const result = await fixerService.fixCapture(args[1], args[0], ctx.from?.id.toString());
+        await ctx.reply(result.message);
+      } else {
+        await ctx.reply("Usage: `/fix <category>` or `/fix <filename> <category>`", {
+          parse_mode: "Markdown",
+        });
+      }
+    });
+
+    sbLog.info("SecondBrain commands registered");
+  }
 
   // Text message handler
   bot.on("message:text", async (ctx) => {

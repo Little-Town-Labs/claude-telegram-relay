@@ -185,7 +185,7 @@ describe("Relay Integration", () => {
       } as any;
 
       // Create a message longer than 4000 chars
-      const longMessage = "A".repeat(3000) + "\n\n" + "B".repeat(2000);
+      const longMessage = `${"A".repeat(3000)}\n\n${"B".repeat(2000)}`;
       await sendResponse(mockCtx, longMessage);
 
       // Should have been split into 2 chunks

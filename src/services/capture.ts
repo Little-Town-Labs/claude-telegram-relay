@@ -272,7 +272,7 @@ export class CaptureService {
         await this.spawnGit(["init"]);
       });
 
-      const relativePath = filePath.replace(this.dataDir + "/", "");
+      const relativePath = filePath.replace(`${this.dataDir}/`, "");
       await this.spawnGit(["add", relativePath]);
       await this.spawnGit(["commit", "-m", `capture: ${category} - ${relativePath}`]);
     } catch (err: unknown) {

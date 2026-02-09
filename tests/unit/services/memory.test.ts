@@ -88,10 +88,10 @@ describe("MemoryService", () => {
       await memoryService.save(memory);
 
       expect(fs.writeFile).toHaveBeenCalledWith(
-        testMemoryFile + ".tmp",
+        `${testMemoryFile}.tmp`,
         JSON.stringify(memory, null, 2)
       );
-      expect(fs.rename).toHaveBeenCalledWith(testMemoryFile + ".tmp", testMemoryFile);
+      expect(fs.rename).toHaveBeenCalledWith(`${testMemoryFile}.tmp`, testMemoryFile);
     });
 
     test("persists all fields correctly", async () => {

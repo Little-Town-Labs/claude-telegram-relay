@@ -45,15 +45,15 @@
 
 > **Write tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T012 [US1] Write CaptureService tests (classify returns Classification, processCapture creates file, capture convenience method, low-confidence goes to _needs_review, fallback on Claude error, filename generation, inbox log append, git commit when enabled) in `tests/unit/services/capture.test.ts`
+- [x] T012 [US1] Write CaptureService tests (classify returns Classification, processCapture creates file, capture convenience method, low-confidence goes to _needs_review, fallback on Claude error, filename generation, inbox log append, git commit when enabled) in `tests/unit/services/capture.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement CaptureService.classify() — build classification prompt, call ClaudeService, parse JSON response, validate with Zod, fallback to admin/0.0 on error — in `src/services/capture.ts`
-- [ ] T014 [US1] Implement CaptureService.processCapture() — generate filename, create category directory, write markdown with frontmatter (using stringifyFrontmatter), log to _inbox_log.md, optional git add+commit (including gitInit on first run per research.md:R4) — in `src/services/capture.ts`
-- [ ] T015 [US1] Implement CaptureService.capture() convenience method (classify + processCapture) in `src/services/capture.ts`
-- [ ] T016 [US1] Export CaptureService from `src/services/index.ts`
-- [ ] T017 [US1] Verify: run capture tests — all pass, typecheck clean
+- [x] T013 [US1] Implement CaptureService.classify() — build classification prompt, call ClaudeService, parse JSON response, validate with Zod, fallback to admin/0.0 on error — in `src/services/capture.ts`
+- [x] T014 [US1] Implement CaptureService.processCapture() — generate filename, create category directory, write markdown with frontmatter (using stringifyFrontmatter), log to _inbox_log.md, optional git add+commit (including gitInit on first run per research.md:R4) — in `src/services/capture.ts`
+- [x] T015 [US1] Implement CaptureService.capture() convenience method (classify + processCapture) in `src/services/capture.ts`
+- [x] T016 [US1] Export CaptureService from `src/services/index.ts`
+- [x] T017 [US1] Verify: run capture tests — all pass, typecheck clean
 
 **Checkpoint**: CaptureService independently functional. Can classify thoughts and store as markdown files.
 
@@ -67,15 +67,15 @@
 
 ### Tests for User Story 2
 
-- [ ] T018 [US2] Write ScannerService tests (scanAllDocuments reads all .md files, scanCategory reads one dir, parse frontmatter from files, handle empty dirs, handle missing dirs, filterByDate) in `tests/unit/services/scanner.test.ts`
-- [ ] T019 [US2] Write SynthesisService.getStats() tests (total/weekly/daily counts, byCategory breakdown, avgConfidence, needsReview count, empty data) in `tests/unit/services/synthesis.test.ts`
+- [x] T018 [US2] Write ScannerService tests (scanAllDocuments reads all .md files, scanCategory reads one dir, parse frontmatter from files, handle empty dirs, handle missing dirs, filterByDate) in `tests/unit/services/scanner.test.ts`
+- [x] T019 [US2] Write SynthesisService.getStats() tests (total/weekly/daily counts, byCategory breakdown, avgConfidence, needsReview count, empty data) in `tests/unit/services/synthesis.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement ScannerService — scanAllDocuments, scanCategory, getNeedsReview, filterByDate using fs/promises readdir+readFile+stat and parseFrontmatter — in `src/services/scanner.ts`
-- [ ] T021 [US2] Implement SynthesisService.getStats() — scan all docs, count by category, compute weekly/daily/confidence stats — in `src/services/synthesis.ts`
-- [ ] T022 [P] [US2] Export ScannerService and SynthesisService from `src/services/index.ts`
-- [ ] T023 [US2] Verify: run scanner + synthesis tests — all pass, typecheck clean
+- [x] T020 [US2] Implement ScannerService — scanAllDocuments, scanCategory, getNeedsReview, filterByDate using fs/promises readdir+readFile+stat and parseFrontmatter — in `src/services/scanner.ts`
+- [x] T021 [US2] Implement SynthesisService.getStats() — scan all docs, count by category, compute weekly/daily/confidence stats — in `src/services/synthesis.ts`
+- [x] T022 [P] [US2] Export ScannerService and SynthesisService from `src/services/index.ts`
+- [x] T023 [US2] Verify: run scanner + synthesis tests — all pass, typecheck clean
 
 **Checkpoint**: ScannerService and SynthesisService.getStats() independently functional. Can scan files and return statistics.
 
@@ -91,17 +91,17 @@
 
 ### Tests for User Story 3
 
-- [ ] T024 [US3] Write ScannerService.getActionableItems() tests (active projects, people with follow-ups, admin with due dates/keywords, non-actionable filtered out) — append to `tests/unit/services/scanner.test.ts`
-- [ ] T025 [US3] Write SynthesisService.getDailyActions() and prioritizeActions() tests (priority scoring: deadlines +100, today +50, yesterday +30, active project +20, urgency keywords +40; limit parameter; empty data) — append to `tests/unit/services/synthesis.test.ts`
-- [ ] T026 [US3] Write DigestService tests (generateDailyDigest builds prompt with action data, calls Claude, returns formatted text; handles no actionable items; handles Claude error) in `tests/unit/services/digest.test.ts`
+- [x] T024 [US3] Write ScannerService.getActionableItems() tests (active projects, people with follow-ups, admin with due dates/keywords, non-actionable filtered out) — append to `tests/unit/services/scanner.test.ts`
+- [x] T025 [US3] Write SynthesisService.getDailyActions() and prioritizeActions() tests (priority scoring: deadlines +100, today +50, yesterday +30, active project +20, urgency keywords +40; limit parameter; empty data) — append to `tests/unit/services/synthesis.test.ts`
+- [x] T026 [US3] Write DigestService tests (generateDailyDigest builds prompt with action data, calls Claude, returns formatted text; handles no actionable items; handles Claude error) in `tests/unit/services/digest.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Implement ScannerService.getActionableItems() — filter by category-specific rules (projects: active/todo status; people: has follow_ups; admin: has due_date or urgency keywords) in `src/services/scanner.ts`
-- [ ] T028 [US3] Implement SynthesisService.getDailyActions() and prioritizeActions() — score and sort items, return top N — in `src/services/synthesis.ts`
-- [ ] T029 [US3] Implement DigestService.generateDailyDigest() — gather actions via SynthesisService, build prompt from daily_digest.txt template, call ClaudeService, return text — in `src/services/digest.ts`
-- [ ] T030 [US3] Export DigestService from `src/services/index.ts`
-- [ ] T031 [US3] Verify: run digest tests — all pass, typecheck clean
+- [x] T027 [US3] Implement ScannerService.getActionableItems() — filter by category-specific rules (projects: active/todo status; people: has follow_ups; admin: has due_date or urgency keywords) in `src/services/scanner.ts`
+- [x] T028 [US3] Implement SynthesisService.getDailyActions() and prioritizeActions() — score and sort items, return top N — in `src/services/synthesis.ts`
+- [x] T029 [US3] Implement DigestService.generateDailyDigest() — gather actions via SynthesisService, build prompt from daily_digest.txt template, call ClaudeService, return text — in `src/services/digest.ts`
+- [x] T030 [US3] Export DigestService from `src/services/index.ts`
+- [x] T031 [US3] Verify: run digest tests — all pass, typecheck clean
 
 **Checkpoint**: Daily digest generation independently functional. Can scan, prioritize, and generate natural-language summaries.
 
@@ -117,14 +117,14 @@
 
 ### Tests for User Story 4
 
-- [ ] T032 [US4] Write SynthesisService.getWeeklySummary() tests (totalCaptures, byCategory, activeProjects list, peopleFollowups list, avgConfidence, needsReviewCount, empty data) — append to `tests/unit/services/synthesis.test.ts`
-- [ ] T033 [US4] Write DigestService.generateWeeklyReview() tests (builds prompt with summary data, calls Claude, returns formatted text; handles empty week) — append to `tests/unit/services/digest.test.ts`
+- [x] T032 [US4] Write SynthesisService.getWeeklySummary() tests (totalCaptures, byCategory, activeProjects list, peopleFollowups list, avgConfidence, needsReviewCount, empty data) — append to `tests/unit/services/synthesis.test.ts`
+- [x] T033 [US4] Write DigestService.generateWeeklyReview() tests (builds prompt with summary data, calls Claude, returns formatted text; handles empty week) — append to `tests/unit/services/digest.test.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T034 [US4] Implement SynthesisService.getWeeklySummary() — scan all docs, filter to last 7 days, compute summary stats, list active projects and people follow-ups — in `src/services/synthesis.ts`
-- [ ] T035 [US4] Implement DigestService.generateWeeklyReview() — gather summary via SynthesisService, build prompt from weekly_review.txt template, call ClaudeService, return text — in `src/services/digest.ts`
-- [ ] T036 [US4] Verify: run weekly review tests — all pass, typecheck clean
+- [x] T034 [US4] Implement SynthesisService.getWeeklySummary() — scan all docs, filter to last 7 days, compute summary stats, list active projects and people follow-ups — in `src/services/synthesis.ts`
+- [x] T035 [US4] Implement DigestService.generateWeeklyReview() — gather summary via SynthesisService, build prompt from weekly_review.txt template, call ClaudeService, return text — in `src/services/digest.ts`
+- [x] T036 [US4] Verify: run weekly review tests — all pass, typecheck clean
 
 **Checkpoint**: Weekly review generation independently functional.
 
@@ -138,13 +138,13 @@
 
 ### Tests for User Story 5
 
-- [ ] T037 [US5] Write FixerService tests (fixCapture moves file to new category dir, updates frontmatter category field, finds last user file from inbox log, finds file by name across categories, handles invalid category, handles file not found, logs fix, git commit when enabled) in `tests/unit/services/fixer.test.ts`
+- [x] T037 [US5] Write FixerService tests (fixCapture moves file to new category dir, updates frontmatter category field, finds last user file from inbox log, finds file by name across categories, handles invalid category, handles file not found, logs fix, git commit when enabled) in `tests/unit/services/fixer.test.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T038 [US5] Implement FixerService — fixCapture (read file, update frontmatter category, write to new dir, remove from old dir, log fix to inbox, optional git commit), findFileByName (search all category dirs), findLastUserFile (parse _inbox_log.md for last entry) — in `src/services/fixer.ts`
-- [ ] T039 [US5] Export FixerService from `src/services/index.ts`
-- [ ] T040 [US5] Verify: run fixer tests — all pass, typecheck clean
+- [x] T038 [US5] Implement FixerService — fixCapture (read file, update frontmatter category, write to new dir, remove from old dir, log fix to inbox, optional git commit), findFileByName (search all category dirs), findLastUserFile (parse _inbox_log.md for last entry) — in `src/services/fixer.ts`
+- [x] T039 [US5] Export FixerService from `src/services/index.ts`
+- [x] T040 [US5] Verify: run fixer tests — all pass, typecheck clean
 
 **Checkpoint**: FixerService independently functional. Can reclassify captures by moving files and updating metadata.
 
@@ -160,12 +160,12 @@
 
 ### Tests for User Story 6
 
-- [ ] T041 [US6] Write ScannerService.getNeedsReview() additional tests (returns docs from _needs_review only, includes filename/confidence/content, empty when no items) — append to `tests/unit/services/scanner.test.ts` if not already covered in T018
+- [x] T041 [US6] Write ScannerService.getNeedsReview() additional tests (returns docs from _needs_review only, includes filename/confidence/content, empty when no items) — append to `tests/unit/services/scanner.test.ts` if not already covered in T018
 
 ### Implementation for User Story 6
 
-- [ ] T042 [US6] Verify ScannerService.getNeedsReview() already implemented in US2 reads _needs_review/ directory — no new service code expected, just verify in `src/services/scanner.ts`
-- [ ] T043 [US6] Verify: run scanner review tests — all pass
+- [x] T042 [US6] Verify ScannerService.getNeedsReview() already implemented in US2 reads _needs_review/ directory — no new service code expected, just verify in `src/services/scanner.ts`
+- [x] T043 [US6] Verify: run scanner review tests — all pass
 
 **Checkpoint**: Review capability functional via existing ScannerService.
 
@@ -179,14 +179,14 @@
 
 ### Tests for Bot Integration
 
-- [ ] T044 Write SchedulerService tests (start sets timeouts for daily/weekly, stop clears timers, getNextRuns returns next trigger times, triggerNow fires digest immediately, handles timezone calculation) in `tests/unit/services/scheduler.test.ts`
+- [x] T044 Write SchedulerService tests (start sets timeouts for daily/weekly, stop clears timers, getNextRuns returns next trigger times, triggerNow fires digest immediately, handles timezone calculation) in `tests/unit/services/scheduler.test.ts`
 
 ### Implementation for Bot Integration
 
-- [ ] T045 Implement SchedulerService — start (calculate next daily/weekly run times, set setTimeout with recursive reschedule), stop (clear all timers), getNextRuns, triggerNow — in `src/services/scheduler.ts`
-- [ ] T046 Export SchedulerService from `src/services/index.ts`
-- [ ] T047 Wire SecondBrain commands into startBot() in `src/index.ts`: initialize services when enabled, register `/capture`, `/stats`, `/review`, `/digest`, `/digest weekly`, `/fix` commands, start SchedulerService, reply "SecondBrain is not enabled" when disabled
-- [ ] T048 Verify: run scheduler tests + typecheck + lint — all pass
+- [x] T045 Implement SchedulerService — start (calculate next daily/weekly run times, set setTimeout with recursive reschedule), stop (clear all timers), getNextRuns, triggerNow — in `src/services/scheduler.ts`
+- [x] T046 Export SchedulerService from `src/services/index.ts`
+- [x] T047 Wire SecondBrain commands into startBot() in `src/index.ts`: initialize services when enabled, register `/capture`, `/stats`, `/review`, `/digest`, `/digest weekly`, `/fix` commands, start SchedulerService, reply "SecondBrain is not enabled" when disabled
+- [x] T048 Verify: run scheduler tests + typecheck + lint — all pass
 
 **Checkpoint**: All Telegram commands wired and functional. Core relay loop unchanged.
 
@@ -198,10 +198,10 @@
 
 **Independent Test**: Run setup script, verify pod starts, send Telegram message and get response.
 
-- [ ] T049 [P] [US7] Create Containerfile — Node.js 18 slim, install Claude CLI via npm, copy source, configure entrypoint — in `infrastructure/Containerfile`
-- [ ] T050 [P] [US7] Create .env.example — document all required/optional env vars — in `infrastructure/.env.example`
-- [ ] T051 [US7] Create podman-setup.sh — create pod, create data volume, build container image, start container with env vars and volume mounts — in `infrastructure/podman-setup.sh`
-- [ ] T052 [US7] Create podman-manage.sh — status, logs, stop, restart, rebuild subcommands — in `infrastructure/podman-manage.sh`
+- [x] T049 [P] [US7] Create Containerfile — Node.js 18 slim, install Claude CLI via npm, copy source, configure entrypoint — in `infrastructure/Containerfile`
+- [x] T050 [P] [US7] Create .env.example — document all required/optional env vars — in `infrastructure/.env.example`
+- [x] T051 [US7] Create podman-setup.sh — create pod, create data volume, build container image, start container with env vars and volume mounts — in `infrastructure/podman-setup.sh`
+- [x] T052 [US7] Create podman-manage.sh — status, logs, stop, restart, rebuild subcommands — in `infrastructure/podman-manage.sh`
 
 **Checkpoint**: Container deployment ready. Can be tested manually with real credentials.
 
@@ -211,12 +211,12 @@
 
 **Purpose**: Integration test, full validation, cleanup
 
-- [ ] T053 Write integration test — capture → scan → synthesize → digest end-to-end flow with mocked Claude CLI — in `tests/integration/secondbrain.test.ts`
-- [ ] T054 Run full test suite: `npm test` — all existing 111 + new tests pass
-- [ ] T055 Run `npm run typecheck` — clean
-- [ ] T056 Run `npm run lint` — clean (Biome strict mode)
-- [ ] T057 Verify core loop intact — regular text messages still produce Claude responses when SecondBrain is disabled
-- [ ] T058 Run quickstart.md validation — all documented commands work
+- [x] T053 Write integration test — capture → scan → synthesize → digest end-to-end flow with mocked Claude CLI — in `tests/integration/secondbrain.test.ts`
+- [x] T054 Run full test suite: `npm test` — all existing 111 + new tests pass (183 total)
+- [x] T055 Run `npm run typecheck` — clean
+- [x] T056 Run `npm run lint` — 0 new errors (2 pre-existing cognitive complexity warnings)
+- [x] T057 Verify core loop intact — regular text messages still produce Claude responses when SecondBrain is disabled
+- [x] T058 Run quickstart.md validation — all documented commands work
 
 ---
 
