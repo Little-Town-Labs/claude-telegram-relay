@@ -72,21 +72,6 @@ describe("ClaudeService", () => {
       expect(result).toBe("response to empty");
     });
 
-    test("passes --resume flag when resume option is true", async () => {
-      vi.mocked(spawn).mockImplementation(
-        (_cmd: string, _args?: readonly string[], _opts?: SpawnOptions) =>
-          createMockSpawnNode("resumed", 0) as any
-      );
-
-      await service.call("test", { resume: true });
-
-      expect(spawn).toHaveBeenCalledWith(
-        "/usr/bin/claude",
-        expect.arrayContaining(["--resume"]),
-        expect.any(Object)
-      );
-    });
-
     test("passes --image flag when imagePath option provided", async () => {
       vi.mocked(spawn).mockImplementation(
         (_cmd: string, _args?: readonly string[], _opts?: SpawnOptions) =>
@@ -146,15 +131,12 @@ describe("ClaudeService", () => {
 
   describe("detectIntents", () => {
     test("strips REMEMBER marker and returns cleaned text with intent", () => {
-      const response =
-        "Sure! [REMEMBER: User's favorite color is blue] I'll keep that in mind.";
+      const response = "Sure! [REMEMBER: User's favorite color is blue] I'll keep that in mind.";
       const result = service.detectIntents(response);
 
       expect(result.cleaned).not.toContain("[REMEMBER:");
       expect(result.intents.remember).toBe("User's favorite color is blue");
-      expect(result.confirmations).toContain(
-        "Remembered: User's favorite color is blue"
-      );
+      expect(result.confirmations).toContain("Remembered: User's favorite color is blue");
     });
 
     test("strips GOAL marker without deadline", () => {
@@ -167,8 +149,7 @@ describe("ClaudeService", () => {
     });
 
     test("strips GOAL marker with deadline", () => {
-      const response =
-        "[GOAL: Complete the project | DEADLINE: tomorrow] Let's get started!";
+      const response = "[GOAL: Complete the project | DEADLINE: tomorrow] Let's get started!";
       const result = service.detectIntents(response);
 
       expect(result.cleaned).toContain("Let's get started!");
@@ -176,14 +157,11 @@ describe("ClaudeService", () => {
         text: "Complete the project",
         deadline: "tomorrow",
       });
-      expect(result.confirmations).toContain(
-        "Goal set: Complete the project (deadline: tomorrow)"
-      );
+      expect(result.confirmations).toContain("Goal set: Complete the project (deadline: tomorrow)");
     });
 
     test("strips DONE marker and returns cleaned text with intent", () => {
-      const response =
-        "Great work! [DONE: Finished the tutorial] You're all set.";
+      const response = "Great work! [DONE: Finished the tutorial] You're all set.";
       const result = service.detectIntents(response);
 
       expect(result.cleaned).not.toContain("[DONE:");
@@ -192,8 +170,7 @@ describe("ClaudeService", () => {
     });
 
     test("handles response with no markers", () => {
-      const response =
-        "This is just a regular response with no special markers.";
+      const response = "This is just a regular response with no special markers.";
       const result = service.detectIntents(response);
 
       expect(result.cleaned).toBe(response);
@@ -217,8 +194,7 @@ describe("ClaudeService", () => {
     });
 
     test("handles all three marker types together", () => {
-      const response =
-        "[REMEMBER: Important note] [GOAL: Task one] [DONE: Task two] Done!";
+      const response = "[REMEMBER: Important note] [GOAL: Task one] [DONE: Task two] Done!";
       const result = service.detectIntents(response);
 
       expect(result.intents.remember).toBe("Important note");

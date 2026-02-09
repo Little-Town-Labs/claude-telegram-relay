@@ -45,7 +45,10 @@ describe("Relay Integration", () => {
       const service = new ClaudeService(config, mockLogger);
 
       // Build prompt with memory context
-      const prompt = service.buildPrompt("What's the weather?", "[Memory Context]\nFacts: lives in NYC");
+      const prompt = service.buildPrompt(
+        "What's the weather?",
+        "[Memory Context]\nFacts: lives in NYC"
+      );
 
       expect(prompt).toContain("What's the weather?");
       expect(prompt).toContain("lives in NYC");
@@ -53,17 +56,14 @@ describe("Relay Integration", () => {
       // Mock Claude CLI response with intent markers
       vi.mocked(spawn).mockImplementation(
         (_cmd, _args?, _opts?) =>
-          createMockSpawnNode(
-            "It's sunny today! [REMEMBER: user asks about weather often]"
-          ) as any
+          createMockSpawnNode("It's sunny today! [REMEMBER: user asks about weather often]") as any
       );
 
       const response = await service.call(prompt);
       expect(response).toContain("sunny");
 
       // Detect intents from response
-      const { cleaned, intents, confirmations } =
-        service.detectIntents(response);
+      const { cleaned, intents, confirmations } = service.detectIntents(response);
 
       expect(cleaned).toContain("sunny");
       expect(cleaned).not.toContain("[REMEMBER:");
@@ -98,12 +98,12 @@ describe("Relay Integration", () => {
       expect(freshState.messageCount).toBe(0);
 
       // Update activity
-      await session.updateActivity("session-123");
+      await session.updateActivity();
 
       // Verify the saved state
       const writeCall = vi.mocked(fs.writeFile).mock.calls[0]!;
       const saved = JSON.parse(writeCall[1] as string);
-      expect(saved.sessionId).toBe("session-123");
+      expect(saved.sessionId).toBeNull();
       expect(saved.messageCount).toBe(1);
     });
 
@@ -185,7 +185,7 @@ describe("Relay Integration", () => {
       } as any;
 
       // Create a message longer than 4000 chars
-      const longMessage = "A".repeat(3000) + "\n\n" + "B".repeat(2000);
+      const longMessage = `${"A".repeat(3000)}\n\n${"B".repeat(2000)}`;
       await sendResponse(mockCtx, longMessage);
 
       // Should have been split into 2 chunks

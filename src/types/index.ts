@@ -11,3 +11,20 @@ export type {
   DetectedIntents,
   MemoryService,
 } from "./memory";
+export type {
+  Category,
+  Classification,
+  ExtractedData,
+  PeopleData,
+  ProjectsData,
+  IdeasData,
+  AdminData,
+  CaptureResult,
+  ScannedDocument,
+  CaptureStats,
+  WeeklySummary,
+  FixResult,
+  SecondBrainConfig,
+  FrontmatterResult,
+} from "./secondbrain";
+export { VALID_CATEGORIES } from "./secondbrain";

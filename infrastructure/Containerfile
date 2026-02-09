@@ -1,0 +1,21 @@
+FROM node:18-slim
+
+WORKDIR /app
+
+# Install Claude CLI globally
+RUN npm install -g @anthropic-ai/claude-code
+
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy source code
+COPY src/ ./src/
+COPY tsconfig.json ./
+
+# Create data directory
+RUN mkdir -p /data
+
+ENV NODE_ENV=production
+
+CMD ["npx", "tsx", "src/index.ts"]

@@ -11,7 +11,7 @@ import type { Context } from "grammy";
 import type { Logger } from "pino";
 
 export interface MediaHandlerOptions {
-  claudeCall: (prompt: string, options: { resume?: boolean }) => Promise<string>;
+  claudeCall: (prompt: string) => Promise<string>;
   uploadsDir: string;
   botToken: string;
   logger: Logger;
@@ -48,7 +48,7 @@ export async function handlePhoto(ctx: Context, options: MediaHandlerOptions): P
     const caption = ctx.message?.caption || "Analyze this image.";
     const prompt = `[Image: ${filePath}]\n\n${caption}`;
 
-    const claudeResponse = await claudeCall(prompt, { resume: true });
+    const claudeResponse = await claudeCall(prompt);
 
     // Cleanup
     await unlink(filePath).catch(() => {});
@@ -92,7 +92,7 @@ export async function handleDocument(ctx: Context, options: MediaHandlerOptions)
     const caption = ctx.message?.caption || `Analyze: ${doc.file_name}`;
     const prompt = `[File: ${filePath}]\n\n${caption}`;
 
-    const claudeResponse = await claudeCall(prompt, { resume: true });
+    const claudeResponse = await claudeCall(prompt);
 
     // Cleanup
     await unlink(filePath).catch(() => {});

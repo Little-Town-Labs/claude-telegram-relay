@@ -21,7 +21,7 @@ export interface SessionManager {
   save(state: SessionState): Promise<void>;
 
   /** Update session with new activity */
-  updateActivity(sessionId: string): Promise<void>;
+  updateActivity(): Promise<void>;
 
   /** Clear session state */
   clear(): Promise<void>;

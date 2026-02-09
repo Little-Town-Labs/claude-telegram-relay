@@ -12,6 +12,9 @@ export interface AppConfig {
   /** Path to Claude CLI executable */
   claudePath: string;
 
+  /** Claude model ID (e.g. claude-haiku-4-5-20251001). Omit for CLI default. */
+  claudeModel?: string;
+
   /** Base directory for relay data */
   relayDir: string;
 
@@ -47,12 +50,12 @@ export interface AppConfig {
 
   /** Log level */
   logLevel: "debug" | "info" | "warn" | "error";
+
+  /** SecondBrain configuration (optional, disabled by default) */
+  secondbrain?: import("./secondbrain").SecondBrainConfig;
 }
 
 export interface ClaudeCallOptions {
-  /** Resume previous session if available */
-  resume?: boolean;
-
   /** Path to image file to include in prompt */
   imagePath?: string;
 

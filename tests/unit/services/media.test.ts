@@ -1,10 +1,6 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import {
-  handlePhoto,
-  handleDocument,
-  handleVoice,
-} from "../../../src/services/media";
 import type { Logger } from "pino";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { handleDocument, handlePhoto, handleVoice } from "../../../src/services/media";
 
 // Mock fs/promises
 vi.mock("fs/promises");
@@ -78,18 +74,14 @@ describe("Media Handlers", () => {
       expect(ctx.api.getFile).toHaveBeenCalledWith("large_id");
 
       // Should download from Telegram API
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("photos/test.jpg")
-      );
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining("photos/test.jpg"));
 
       // Should call Claude with image prompt
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("[Image:"),
-        expect.objectContaining({})
+        expect.stringContaining("[Image:")
       );
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("What is this?"),
-        expect.objectContaining({})
+        expect.stringContaining("What is this?")
       );
 
       // Should return the response
@@ -138,9 +130,7 @@ describe("Media Handlers", () => {
         logger: mockLogger,
       });
 
-      expect(fs.unlink).toHaveBeenCalledWith(
-        expect.stringContaining(testUploadsDir)
-      );
+      expect(fs.unlink).toHaveBeenCalledWith(expect.stringContaining(testUploadsDir));
     });
 
     test("temp file cleanup on error", async () => {
@@ -155,9 +145,7 @@ describe("Media Handlers", () => {
       };
       vi.mocked(fetch).mockResolvedValue(mockResponse as any);
 
-      const mockClaudeCall = vi
-        .fn()
-        .mockRejectedValue(new Error("Claude failed"));
+      const mockClaudeCall = vi.fn().mockRejectedValue(new Error("Claude failed"));
 
       const result = await handlePhoto(ctx as any, {
         claudeCall: mockClaudeCall,
@@ -192,8 +180,7 @@ describe("Media Handlers", () => {
       });
 
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("Analyze this image"),
-        expect.objectContaining({})
+        expect.stringContaining("Analyze this image")
       );
     });
   });
@@ -242,12 +229,10 @@ describe("Media Handlers", () => {
 
       expect(ctx.getFile).toHaveBeenCalled();
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("[File:"),
-        expect.objectContaining({})
+        expect.stringContaining("[File:")
       );
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("Summarize this"),
-        expect.objectContaining({})
+        expect.stringContaining("Summarize this")
       );
       expect(result).toBe("Summary: ...");
       expect(fs.unlink).toHaveBeenCalled();
@@ -292,9 +277,7 @@ describe("Media Handlers", () => {
         logger: mockLogger,
       });
 
-      expect(fs.unlink).toHaveBeenCalledWith(
-        expect.stringContaining(testUploadsDir)
-      );
+      expect(fs.unlink).toHaveBeenCalledWith(expect.stringContaining(testUploadsDir));
     });
 
     test("uses filename in default caption", async () => {
@@ -319,8 +302,7 @@ describe("Media Handlers", () => {
       });
 
       expect(mockClaudeCall).toHaveBeenCalledWith(
-        expect.stringContaining("data.csv"),
-        expect.objectContaining({})
+        expect.stringContaining("data.csv")
       );
     });
   });

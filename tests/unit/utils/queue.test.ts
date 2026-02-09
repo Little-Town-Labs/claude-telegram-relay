@@ -50,12 +50,7 @@ describe("MessageQueue", () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Task 2 should not start until task 1 ends
-    expect(executionLog).toEqual([
-      "task1-start",
-      "task1-end",
-      "task2-start",
-      "task2-end",
-    ]);
+    expect(executionLog).toEqual(["task1-start", "task1-end", "task2-start", "task2-end"]);
   });
 
   test("size() returns pending items count", async () => {
