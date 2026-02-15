@@ -299,6 +299,8 @@ See the `templates/` directory in the [LTLClaude repository](https://github.com/
 - Local JSON files (`~/.claude-relay/session.json`, `~/.claude-relay/memory.json`) (001-modular-service-layer)
 - TypeScript 5.9+ on Node.js 18+ + grammy 1.21+, pino 9.5+, zod 3.24+ (no new deps) (002-secondbrain-integration)
 - Local markdown files with YAML frontmatter in `~/.claude-relay/secondbrain/` (002-secondbrain-integration)
+- Bash 5.x (setup script), YAML (podmgr config), Python 3.12 + podmgr (Little-Town-Labs/podman-systemd-manager), Podman (003-secondbrain-infra)
+- `/var/lib/secondbrain/` (service account home), `/mnt/fileshare/` (003-secondbrain-infra)
 
 ## Recent Changes
 - 001-modular-service-layer: Added TypeScript 5.9+ on Node.js 18+ + grammy 1.21+, pino 9.5+, zod 3.24+

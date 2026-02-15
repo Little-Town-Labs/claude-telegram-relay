@@ -1,15 +1,15 @@
 <!--
 Sync Impact Report
 ===================
-Version change: 0.0.0 → 1.0.0 (initial ratification)
-Modified principles: N/A (first version)
+Version change: 1.0.0 → 1.1.0 (new principles added for container, file access, and resilience)
+Modified principles: none renamed
 Added sections:
-  - Core Principles (I–VIII)
-  - SecondBrain Engineering Principles (IX–XX)
-  - Performance & Reliability Standards
-  - Development Workflow
-  - Governance
-Removed sections: N/A
+  - XXI. Container Isolation and Least Privilege (new)
+  - XXII. Local-First Data Residency (new)
+  - XXIII. Graceful Degradation (new)
+  - XXIV. Infrastructure as Code (new)
+  - Performance table: added 3 new rows (SMB latency, container restart, file read)
+Removed sections: none
 Templates requiring updates:
   - .specify/templates/plan-template.md — ✅ no changes needed
     (Constitution Check section is dynamic; gates derive from this file)
@@ -229,6 +229,72 @@ novel approaches. Every line of code MUST be understandable by a
 developer reading it for the first time without consulting
 external documentation.
 
+## Infrastructure Principles
+
+The following principles govern the deployment, container
+management, and system-level behavior of the assistant
+infrastructure.
+
+### XXI. Container Isolation and Least Privilege
+
+Every containerized service MUST run under a dedicated non-root
+service account (e.g., `secondbrain`). No container MUST run as
+root on the host. Each container MUST be granted only the
+filesystem mounts and network access it requires — nothing more.
+Volume mounts to sensitive host paths (home directories, secrets
+files) MUST be read-only unless write access is explicitly
+required. `loginctl enable-linger` MUST be set on any service
+account whose containers must survive user logout.
+
+Rationale: Containers that run as root or with excessive mounts
+turn a container escape into a full host compromise. Isolation
+limits blast radius.
+
+### XXII. Local-First Data Residency
+
+All user data — session state, memory, files, conversation
+history — MUST reside on the local machine by default. No feature
+MUST require routing user content through a third-party cloud
+service unless the user explicitly enables it. Local AI (Ollama)
+MUST be preferred over cloud AI for tasks where quality is
+sufficient. When cloud services are used (Telegram Bot API,
+Claude CLI), the minimum necessary data MUST be transmitted.
+
+Rationale: This is a personal assistant on a personal machine.
+The user's notes, files, and conversation history are private
+by default. Cloud services are tools, not data stores.
+
+### XXIII. Graceful Degradation
+
+The system MUST remain partially functional when non-core
+services fail. If the SecondBrain backend is unavailable, the
+Telegram relay MUST still respond to messages using Claude CLI
+alone. If Ollama is unavailable, digest and synthesis services
+MUST fall back or skip rather than crash the relay. If the
+Windows fileshare is unmounted, file-access commands MUST return
+a clear error rather than hanging. Each service dependency MUST
+have an explicit unavailability behavior documented in its module.
+
+Rationale: A personal assistant that goes fully dark because one
+container is down is worse than an assistant with reduced
+capability. Partial availability preserves trust.
+
+### XXIV. Infrastructure as Code
+
+All container configurations, systemd service units, and pod
+definitions MUST be version-controlled. Manual `podman run`
+commands are acceptable for exploration only — production
+deployments MUST be driven by podmgr YAML configs or equivalent
+declarative files committed to the repository. Environment
+variables for containers MUST be stored in `.env`-style files
+tracked in the repo (with secrets excluded via `.gitignore`).
+Rebuilding the full stack from a fresh clone MUST be possible
+with a single documented command sequence.
+
+Rationale: Infrastructure that exists only in shell history or
+operator memory cannot be audited, reproduced, or recovered
+after a hardware failure.
+
 ## Performance & Reliability Standards
 
 | Metric | Target | Measurement |
@@ -240,6 +306,9 @@ external documentation.
 | Uptime (daemon) | 99.5% | Measured over rolling 30-day window |
 | Test suite pass rate | 100% | All tests green before merge |
 | Code coverage | >= 80% | Line coverage via vitest |
+| SMB read latency (p95) | < 500ms | File read from Windows fileshare mount |
+| Container restart time | < 30s | From failure detection to healthy state |
+| Core loop availability | 100% | Relay responds even when modules degrade |
 
 ## Development Workflow
 
@@ -282,4 +351,4 @@ prevails.
 development patterns and `project-config.json` for commands and
 agent routing.
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-06 | **Last Amended**: 2026-02-06
+**Version**: 1.1.0 | **Ratified**: 2026-02-06 | **Last Amended**: 2026-02-15

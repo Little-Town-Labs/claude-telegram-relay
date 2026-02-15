@@ -36,14 +36,15 @@ check_feature_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
 # Ensure the feature directory exists
 mkdir -p "$FEATURE_DIR"
 
-# Copy plan template if it exists
+# Copy plan template only if plan.md does not already exist
 TEMPLATE="$REPO_ROOT/.specify/templates/plan-template.md"
-if [[ -f "$TEMPLATE" ]]; then
+if [[ -f "$IMPL_PLAN" ]]; then
+    echo "Plan file already exists at $IMPL_PLAN — skipping template copy"
+elif [[ -f "$TEMPLATE" ]]; then
     cp "$TEMPLATE" "$IMPL_PLAN"
     echo "Copied plan template to $IMPL_PLAN"
 else
     echo "Warning: Plan template not found at $TEMPLATE"
-    # Create a basic plan file if template doesn't exist
     touch "$IMPL_PLAN"
 fi
 

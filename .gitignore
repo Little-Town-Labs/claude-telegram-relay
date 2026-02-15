@@ -19,6 +19,9 @@ session.json
 .DS_Store
 Thumbs.db
 
+# Secrets — infra
+/etc/samba/credentials.secondbrain
+
 # IDE
 .idea/
 .vscode/
