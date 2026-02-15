@@ -1,0 +1,51 @@
+# infra/secondbrain-pod.yaml
+# podmgr pod definition for the SecondBrain stack.
+#
+# Run as: secondbrain service account (via machinectl shell)
+# Deploy: podmgr pod init /var/lib/secondbrain/secondbrain-pod.yaml
+#
+# VERIFY before first deploy:
+#   - backend port (default 8080) — confirm via:
+#       podman inspect secondbrain-backend | grep -i port
+#
+# See specs/003-secondbrain-infra/quickstart.md for full deploy steps.
+
+name: secondbrain
+restart_policy: always
+
+services:
+
+  # ── Ollama (local LLM inference) ──────────────────────────────
+  - name: ollama
+    image: docker.io/ollama/ollama:latest
+    volumes:
+      # Persist downloaded models across container restarts
+      - /var/lib/secondbrain/ollama:/root/.ollama
+    health_check:
+      type: http
+      endpoint: /
+      port: 11434
+      interval: 30
+      timeout: 10
+      retries: 3
+
+  # ── Backend API ───────────────────────────────────────────────
+  - name: backend
+    image: localhost/secondbrain/backend:latest
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_URL: http://localhost:11434
+    volumes:
+      # Read-only access to Windows fileshare
+      - /mnt/fileshare:/mnt/fileshare:ro
+    health_check:
+      type: http
+      endpoint: /health
+      # VERIFY: confirm actual backend port (default 8080)
+      # Run: podman inspect secondbrain-backend | grep -i exposedport
+      port: 8080
+      interval: 30
+      timeout: 10
+      retries: 3
+

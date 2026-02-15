@@ -1,0 +1,29 @@
+# infra/fstab.fragment
+# Template for the /etc/fstab entry that mounts the Windows fileshare.
+#
+# HOW TO USE:
+#   1. Run setup.sh — it will substitute placeholders and append automatically.
+#   2. Or append manually after replacing UPPERCASE placeholders:
+#
+#      WINDOWS-HOST    — Windows machine hostname or IP (e.g. 192.168.1.10)
+#      SHARE-NAME      — SMB share name (e.g. Documents)
+#      SECONDBRAIN-UID — UID of the secondbrain account: $(id -u secondbrain)
+#      SECONDBRAIN-GID — GID of the secondbrain account: $(id -g secondbrain)
+#
+# Mount options explained:
+#   credentials=...     — Path to root-only credentials file (chmod 600)
+#   uid/gid=...         — All mounted files appear owned by secondbrain on Linux
+#   file_mode=0640      — Files readable by owner (secondbrain) and group
+#   dir_mode=0750       — Directories traversable by owner and group
+#   soft                — Returns error immediately if server unreachable (no hang)
+#   _netdev             — systemd waits for network before attempting mount
+#   x-systemd.automount — Lazy mount: only connects on first file access
+#   nofail              — Boot succeeds even if Windows machine is offline
+#   0 0                 — No fsck / no dump
+#
+# Verify after appending:
+#   sudo mount -a
+#   mount | grep fileshare
+#   ls /mnt/fileshare
+
+//WINDOWS-HOST/SHARE-NAME /mnt/fileshare cifs credentials=/etc/samba/credentials.secondbrain,uid=SECONDBRAIN-UID,gid=SECONDBRAIN-GID,file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0
