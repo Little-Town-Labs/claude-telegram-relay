@@ -164,7 +164,7 @@ and confirm the mount persists across reboots.
 **Windows Fileshare**
 
 - **FR-011**: The Windows fileshare MUST be mounted at a stable,
-  documented path (e.g., `/mnt/fileshare`) accessible by the
+  documented path (e.g., `/mnt/PersonalAssistantHub`) accessible by the
   `secondbrain` service account.
 - **FR-012**: The mount MUST be configured to mount automatically
   at boot via `/etc/fstab` or equivalent persistent mechanism.

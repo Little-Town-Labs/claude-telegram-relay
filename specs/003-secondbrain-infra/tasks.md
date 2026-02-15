@@ -91,7 +91,7 @@ and confirm all containers show `running`.
 - [X] T011 [US2] Create `infra/secondbrain-pod.yaml` with the full podmgr pod
   definition: name `secondbrain`, restart_policy `always`, services `ollama`
   (HTTP health on port 11434) and `backend` (HTTP health on recorded port,
-  depends_on ollama, volume `/mnt/fileshare:/mnt/fileshare:ro`); volumes
+  depends_on ollama, volume `/mnt/PersonalAssistantHub:/mnt/PersonalAssistantHub:ro`); volumes
   bind-mount `/var/lib/secondbrain/ollama:/root/.ollama` for model persistence
 - [X] T012 [US2] Add image export block to `infra/setup.sh` (runs as
   `backstage440`): exports `localhost/secondbrain/backend:latest` to
@@ -118,23 +118,23 @@ and confirm all containers show `running`.
 
 ## Phase 5: User Story 3 — Windows Fileshare Access (Priority: P3)
 
-**Goal**: Windows SMB share mounted at `/mnt/fileshare`, owned by `secondbrain`,
+**Goal**: Windows SMB share mounted at `/mnt/PersonalAssistantHub`, owned by `secondbrain`,
 persistent across reboots, non-blocking when Windows is offline.
 
-**Independent Test**: With Windows online, run `ls /mnt/fileshare` and confirm
+**Independent Test**: With Windows online, run `ls /mnt/PersonalAssistantHub` and confirm
 files are listed. Unmount, take Windows offline, reboot — confirm system boots
 and relay responds on Telegram without the mount blocking startup.
 
 - [X] T017 [P] [US3] Create `infra/fstab.fragment` with the templated fstab
   line using UPPERCASE placeholders:
-  `//WINDOWS-HOST/SHARE-NAME /mnt/fileshare cifs credentials=/etc/samba/credentials.secondbrain,uid=SECONDBRAIN-UID,gid=SECONDBRAIN-GID,file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0`
+  `//WINDOWS-HOST/SHARE-NAME /mnt/PersonalAssistantHub cifs credentials=/etc/samba/credentials.secondbrain,uid=SECONDBRAIN-UID,gid=SECONDBRAIN-GID,file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0`
   and a comment block explaining each option
 - [X] T018 [US3] Add cifs-utils install block to `infra/setup.sh`:
   runs `sudo apt-get install -y cifs-utils`; skips if already installed
   (check `dpkg -l cifs-utils 2>/dev/null | grep -q ^ii`)
 - [X] T019 [US3] Add mount point creation block to `infra/setup.sh`:
-  runs `sudo mkdir -p /mnt/fileshare` and
-  `sudo chown secondbrain:secondbrain /mnt/fileshare`
+  runs `sudo mkdir -p /mnt/PersonalAssistantHub` and
+  `sudo chown secondbrain:secondbrain /mnt/PersonalAssistantHub`
 - [X] T020 [US3] Add credentials file creation block to `infra/setup.sh`:
   prompts operator for Windows hostname, share name, username, password,
   and domain (default WORKGROUP); writes `/etc/samba/credentials.secondbrain`
@@ -143,10 +143,10 @@ and relay responds on Telegram without the mount blocking startup.
 - [X] T021 [US3] Add fstab append block to `infra/setup.sh`: reads UID/GID
   of `secondbrain` account, substitutes into `infra/fstab.fragment` placeholders,
   and appends the resulting line to `/etc/fstab` only if not already present
-  (grep check on `/mnt/fileshare`); runs `sudo mount -a` and verifies
-  `/mnt/fileshare` appears in `mount` output
+  (grep check on `/mnt/PersonalAssistantHub`); runs `sudo mount -a` and verifies
+  `/mnt/PersonalAssistantHub` appears in `mount` output
 - [X] T022 [US3] Add fileshare smoke test to `infra/setup.sh`:
-  attempts `ls /mnt/fileshare` and prints PASS/FAIL; if FAIL, prints
+  attempts `ls /mnt/PersonalAssistantHub` and prints PASS/FAIL; if FAIL, prints
   troubleshooting hint about Windows machine availability
 
 **Checkpoint**: User Story 3 complete. All three user stories independently verified.
@@ -165,7 +165,7 @@ the full quickstart.md validation.
 - [X] T025 Add final summary block to `infra/setup.sh` that prints a table
   of all smoke test results (US1, US2, US3) with PASS/FAIL status and
   overall exit code 0 only if all pass
-- [ ] T026 Run `quickstart.md` step-by-step validation on the machine to
+- [X] T026 Run `quickstart.md` step-by-step validation on the machine to
   confirm all 7 steps succeed; update quickstart.md if any step is incorrect
 - [X] T027 [P] Verify `.gitignore` contains `/etc/samba/credentials.secondbrain`
   and no secrets are staged: run `git status` and confirm no credential files appear

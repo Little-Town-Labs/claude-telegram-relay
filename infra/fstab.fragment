@@ -24,6 +24,6 @@
 # Verify after appending:
 #   sudo mount -a
 #   mount | grep fileshare
-#   ls /mnt/fileshare
+#   ls /mnt/PersonalAssistantHub
 
-//WINDOWS-HOST/SHARE-NAME /mnt/fileshare cifs credentials=/etc/samba/credentials.secondbrain,uid=SECONDBRAIN-UID,gid=SECONDBRAIN-GID,file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0
+//WINDOWS-HOST/SHARE-NAME /mnt/PersonalAssistantHub cifs credentials=/etc/samba/credentials.secondbrain,uid=SECONDBRAIN-UID,gid=SECONDBRAIN-GID,file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0

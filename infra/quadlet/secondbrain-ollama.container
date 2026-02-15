@@ -1,0 +1,22 @@
+# secondbrain-ollama.container
+# Quadlet unit for Ollama LLM inference service.
+#
+# Reachable by the backend at: http://systemd-secondbrain-ollama:11434
+# Health check (manual): curl http://localhost:11434/ (from host)
+
+[Unit]
+Description=Ollama LLM inference for SecondBrain
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/ollama/ollama:latest
+Network=secondbrain.network
+Volume=/var/lib/secondbrain/ollama:/root/.ollama
+
+[Service]
+Restart=always
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

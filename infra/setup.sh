@@ -3,17 +3,17 @@
 # infra/setup.sh — SecondBrain Infrastructure Setup
 # ==============================================================
 # Idempotent one-time setup for the SecondBrain service account,
-# container migration to podmgr, and Windows fileshare mount.
+# Quadlet container deployment, and Windows fileshare mount.
 #
 # Run as: backstage440 (with sudo access)
 # Re-run safely: all steps check current state before acting.
 #
 # Exit codes:
 #   0 — All steps completed successfully
-#   1 — Required command not found (e.g., podmgr not installed)
+#   1 — Required command not found
 #   2 — Service account creation failed
 #   3 — Image migration failed
-#   4 — podmgr pod init/start failed
+#   4 — Quadlet deployment or container start failed
 #   5 — Mount test failed (fatal only if --strict)
 # ==============================================================
 
@@ -68,7 +68,7 @@ Exit codes:
   1 — Required command not found
   2 — Service account creation failed
   3 — Image migration failed
-  4 — podmgr pod init/start failed
+  4 — Quadlet deployment or container start failed
   5 — Mount test failed
 EOF
   exit 0
@@ -92,33 +92,13 @@ check_prerequisites() {
   if [[ $missing -eq 1 ]]; then
     echo ""
     print_red "Install missing commands and re-run."
+    print_yellow "  machinectl is provided by: sudo apt install -y systemd-container"
     exit 1
   fi
 }
 
 check_prerequisites
 
-# ==============================================================
-# Phase 2: Install podmgr
-# ==============================================================
-print_step "Installing podmgr..."
-
-if [[ -x "/opt/podmgr/.venv/bin/podmgr" ]]; then
-  already_done
-  print_green "podmgr already installed  →  $(/opt/podmgr/.venv/bin/podmgr --version 2>/dev/null || echo 'version unknown')"
-else
-  sudo git clone https://github.com/Little-Town-Labs/podman-systemd-manager.git /opt/podmgr
-  sudo python3 -m venv /opt/podmgr/.venv
-  sudo /opt/podmgr/.venv/bin/pip install -e /opt/podmgr --quiet
-  if /opt/podmgr/.venv/bin/podmgr --version &>/dev/null; then
-    print_green "podmgr installed successfully"
-  else
-    print_red "podmgr installation verification failed"
-    exit 1
-  fi
-fi
-
-PODMGR="/opt/podmgr/.venv/bin/podmgr"
 
 # ==============================================================
 # Phase 3 (US1): Service Account
@@ -208,7 +188,7 @@ if [[ "$detected_port" != "unknown" && "$detected_port" =~ ^[0-9]+$ ]]; then
   print_green "Detected backend port: $BACKEND_PORT"
 else
   print_yellow "Backend port not detected from running container; using default: $BACKEND_PORT"
-  print_yellow "Verify the port in infra/secondbrain-pod.yaml before proceeding"
+  print_yellow "Verify the port in infra/secondbrain.yaml before proceeding"
 fi
 
 # T012 — Export images from backstage440 storage
@@ -253,53 +233,51 @@ else
   fi
 fi
 
-# T014 — podmgr init
-print_step "Initialising pod with podmgr..."
+# T014 — Deploy Quadlet units
+print_step "Deploying Quadlet container units..."
 
-POD_YAML="$SCRIPT_DIR/secondbrain-pod.yaml"
-if [[ ! -f "$POD_YAML" ]]; then
-  print_red "Pod YAML not found: $POD_YAML"
-  print_red "Ensure infra/secondbrain-pod.yaml exists in the repository"
+QUADLET_DIR="$SCRIPT_DIR/quadlet"
+if [[ ! -d "$QUADLET_DIR" ]]; then
+  print_red "Quadlet directory not found: $QUADLET_DIR"
+  print_red "Ensure infra/quadlet/ exists in the repository"
   exit 4
 fi
 
-sudo cp "$POD_YAML" /var/lib/secondbrain/secondbrain-pod.yaml
+# Create Quadlet config directory, volume directories, and copy units
+SYSTEMD_DIR="/var/lib/secondbrain/.config/containers/systemd"
+sudo mkdir -p "$SYSTEMD_DIR"
+sudo mkdir -p /var/lib/secondbrain/ollama
+sudo cp "$QUADLET_DIR"/*.container "$QUADLET_DIR"/*.network "$SYSTEMD_DIR"/
+sudo chown -R secondbrain:secondbrain /var/lib/secondbrain/.config /var/lib/secondbrain/ollama
+print_green "Quadlet units copied to $SYSTEMD_DIR"
 
-if sudo machinectl shell secondbrain@ /bin/bash -c \
-   "source /opt/podmgr/.venv/bin/activate && \
-    podmgr config validate /var/lib/secondbrain/secondbrain-pod.yaml && \
-    podmgr pod init /var/lib/secondbrain/secondbrain-pod.yaml"; then
-  print_green "Pod validated and initialised by podmgr"
-else
-  print_red "podmgr pod init failed"
-  exit 4
-fi
+# Reload systemd so Quadlet generator creates the service units
+sudo machinectl shell secondbrain@ /bin/bash -c \
+  "systemctl --user daemon-reload"
+print_green "systemd daemon reloaded — Quadlet units registered"
 
-# T015 — Start pod and poll until all services running
-print_step "Starting pod..."
+# T015 — Start services and poll until all running
+print_step "Starting services..."
 
 sudo machinectl shell secondbrain@ /bin/bash -c \
-  "source /opt/podmgr/.venv/bin/activate && podmgr pod start secondbrain" || true
+  "systemctl --user start secondbrain-ollama secondbrain-backend" || true
 
 timeout=90
 elapsed=0
 print_yellow "Waiting for all services to reach 'running' state (up to ${timeout}s)..."
 
 while [[ $elapsed -lt $timeout ]]; do
-  status_out=$(sudo machinectl shell secondbrain@ /bin/bash -c \
-    "source /opt/podmgr/.venv/bin/activate && podmgr pod status secondbrain 2>/dev/null" \
-    2>/dev/null || echo "")
+  running_count=$(sudo machinectl shell secondbrain@ /bin/bash -c \
+    "systemctl --user is-active secondbrain-ollama.service secondbrain-backend.service 2>/dev/null | grep -c '^active$'" \
+    2>/dev/null | tail -1 || echo "0")
 
-  running_count=$(echo "$status_out" | grep -c "running" || true)
-  total_count=$(echo "$status_out" | grep -cE "ollama|backend" || true)
-
-  if [[ $total_count -ge 2 && $running_count -ge 2 ]]; then
+  if [[ "$running_count" -ge 2 ]]; then
     RESULT_US2_CONTAINERS="PASS"
     print_green "PASS: all 2 services running"
     break
   fi
 
-  print_yellow "  ${elapsed}s — running: ${running_count}/${total_count} services..."
+  print_yellow "  ${elapsed}s — active: ${running_count}/2 services..."
   sleep 5
   elapsed=$((elapsed + 5))
 done
@@ -307,8 +285,8 @@ done
 if [[ "$RESULT_US2_CONTAINERS" != "PASS" ]]; then
   RESULT_US2_CONTAINERS="FAIL"
   print_red "Timeout after ${timeout}s — not all services reached 'running'"
-  print_yellow "Diagnose: sudo machinectl shell secondbrain@ /bin/bash -c \\"
-  print_yellow "  'source /opt/podmgr/.venv/bin/activate && podmgr pod status secondbrain'"
+  print_yellow "Diagnose:"
+  print_yellow "  sudo machinectl shell secondbrain@ /bin/bash -c 'systemctl --user status secondbrain-pod'"
   exit 4
 fi
 
@@ -343,11 +321,11 @@ else
 fi
 
 # T019 — Create mount point
-print_step "Creating mount point /mnt/fileshare..."
+print_step "Creating mount point /mnt/PersonalAssistantHub..."
 
-sudo mkdir -p /mnt/fileshare
-sudo chown secondbrain:secondbrain /mnt/fileshare
-print_green "/mnt/fileshare created and owned by secondbrain"
+sudo mkdir -p /mnt/PersonalAssistantHub
+sudo chown secondbrain:secondbrain /mnt/PersonalAssistantHub
+print_green "/mnt/PersonalAssistantHub created and owned by secondbrain"
 
 # T020 — Credentials file
 print_step "Configuring SMB credentials..."
@@ -396,21 +374,21 @@ if [[ -n "$WINDOWS_HOST" && -n "$SHARE_NAME" ]]; then
 
   SBUID=$(id -u secondbrain)
   SBGID=$(id -g secondbrain)
-  FSTAB_LINE="//${WINDOWS_HOST}/${SHARE_NAME} /mnt/fileshare cifs credentials=${CREDS_FILE},uid=${SBUID},gid=${SBGID},file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0"
+  FSTAB_LINE="//${WINDOWS_HOST}/${SHARE_NAME} /mnt/PersonalAssistantHub cifs credentials=${CREDS_FILE},uid=${SBUID},gid=${SBGID},file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0"
 
-  if grep -q "/mnt/fileshare" /etc/fstab 2>/dev/null; then
+  if grep -q "/mnt/PersonalAssistantHub" /etc/fstab 2>/dev/null; then
     already_done
-    print_yellow "An /mnt/fileshare entry already exists in /etc/fstab — not appending"
+    print_yellow "An /mnt/PersonalAssistantHub entry already exists in /etc/fstab — not appending"
     print_yellow "Review /etc/fstab manually to update host/share values if needed"
   else
     echo "$FSTAB_LINE" | sudo tee -a /etc/fstab > /dev/null
     print_green "fstab entry appended"
 
     sudo mount -a
-    if mount | grep -q "/mnt/fileshare"; then
-      print_green "/mnt/fileshare is mounted"
+    if mount | grep -q "/mnt/PersonalAssistantHub"; then
+      print_green "/mnt/PersonalAssistantHub is mounted"
     else
-      print_yellow "mount -a ran but /mnt/fileshare not in mount output"
+      print_yellow "mount -a ran but /mnt/PersonalAssistantHub not in mount output"
       print_yellow "Windows machine may be offline — mount will activate on next access (automount)"
     fi
   fi
@@ -422,12 +400,12 @@ fi
 # T022 — Fileshare smoke test
 print_step "Fileshare smoke test..."
 
-if ls /mnt/fileshare &>/dev/null; then
+if ls /mnt/PersonalAssistantHub &>/dev/null; then
   RESULT_US3_MOUNT="PASS"
-  print_green "PASS: /mnt/fileshare is accessible"
+  print_green "PASS: /mnt/PersonalAssistantHub is accessible"
 else
   RESULT_US3_MOUNT="FAIL"
-  print_yellow "FAIL: /mnt/fileshare is not accessible"
+  print_yellow "FAIL: /mnt/PersonalAssistantHub is not accessible"
   print_yellow "  Is the Windows machine online? Try: ping ${WINDOWS_HOST:-<WINDOWS-HOST>}"
   print_yellow "  Check: sudo journalctl -u mnt-fileshare.mount -n 50"
 fi
@@ -455,8 +433,8 @@ if $all_pass; then
   echo ""
   echo "  Verify after reboot:"
   echo "    sudo machinectl shell secondbrain@ /bin/bash -c \\"
-  echo "      'source /opt/podmgr/.venv/bin/activate && podmgr pod status secondbrain'"
-  echo "    ls /mnt/fileshare"
+  echo "      'systemctl --user status secondbrain-ollama secondbrain-backend'"
+  echo "    ls /mnt/PersonalAssistantHub"
 else
   print_yellow "Setup completed with warnings — review FAIL/SKIP items above."
 fi

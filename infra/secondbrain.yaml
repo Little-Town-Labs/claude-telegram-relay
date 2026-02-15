@@ -38,7 +38,7 @@ services:
       OLLAMA_URL: http://localhost:11434
     volumes:
       # Read-only access to Windows fileshare
-      - /mnt/fileshare:/mnt/fileshare:ro
+      - /mnt/PersonalAssistantHub:/mnt/PersonalAssistantHub:ro
     health_check:
       type: http
       endpoint: /health

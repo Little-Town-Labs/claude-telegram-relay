@@ -109,7 +109,7 @@ options. Credentials in `/etc/samba/credentials.secondbrain` owned by root (600)
 
 **fstab entry**:
 ```
-//WINDOWS-HOST/SHARE-NAME /mnt/fileshare cifs \
+//WINDOWS-HOST/SHARE-NAME /mnt/PersonalAssistantHub cifs \
   credentials=/etc/samba/credentials.secondbrain,\
   uid=secondbrain,gid=secondbrain,\
   file_mode=0640,dir_mode=0750,\
@@ -127,8 +127,8 @@ domain=WORKGROUP
 
 **Mount point ownership**:
 ```bash
-sudo mkdir -p /mnt/fileshare
-sudo chown secondbrain:secondbrain /mnt/fileshare
+sudo mkdir -p /mnt/PersonalAssistantHub
+sudo chown secondbrain:secondbrain /mnt/PersonalAssistantHub
 ```
 
 ---

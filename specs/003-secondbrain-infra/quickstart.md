@@ -8,7 +8,16 @@
 
 ## Before You Start
 
-You will need:
+Install required system packages before running any steps:
+
+```bash
+sudo apt install -y systemd-container cifs-utils
+```
+
+- `systemd-container` — provides `machinectl`, required for all container operations under the `secondbrain` account
+- `cifs-utils` — required for the Windows fileshare mount (Step 6)
+
+You will also need:
 - Your Windows machine hostname or IP address
 - The SMB share name on the Windows machine
 - A Windows username and password with read access to the share
@@ -18,20 +27,7 @@ These steps do not touch the relay process.
 
 ---
 
-## Step 1: Install podmgr
-
-```bash
-git clone https://github.com/Little-Town-Labs/podman-systemd-manager.git /opt/podmgr
-cd /opt/podmgr
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-podmgr --version  # should print a version number
-```
-
----
-
-## Step 2: Create the Service Account
+## Step 1: Create the Service Account
 
 ```bash
 # Create the account
@@ -54,7 +50,7 @@ sudo loginctl show-user secondbrain | grep Linger
 
 ---
 
-## Step 3: Migrate Container Images
+## Step 2: Migrate Container Images
 
 ```bash
 # Export locally-built images from your account
@@ -74,28 +70,34 @@ rm /tmp/sb-backend.tar
 
 ---
 
-## Step 4: Initialise the Pod with podmgr
+## Step 3: Deploy Quadlet Units
 
 ```bash
-# Copy the pod config from the repo
-cp infra/secondbrain-pod.yaml /var/lib/secondbrain/
+# Create config directory, volume directories, and copy units
+sudo mkdir -p /var/lib/secondbrain/.config/containers/systemd
+sudo mkdir -p /var/lib/secondbrain/ollama
+sudo cp infra/quadlet/*.container infra/quadlet/*.network \
+  /var/lib/secondbrain/.config/containers/systemd/
+sudo chown -R secondbrain:secondbrain /var/lib/secondbrain/.config /var/lib/secondbrain/ollama
 
-# Run podmgr as the service account
-sudo machinectl shell secondbrain@ /bin/bash -c "
-  source /opt/podmgr/.venv/bin/activate
-  podmgr config validate /var/lib/secondbrain/secondbrain-pod.yaml
-  podmgr pod init /var/lib/secondbrain/secondbrain-pod.yaml
-  podmgr pod start secondbrain
-  podmgr pod status secondbrain
-"
+# Reload systemd so Quadlet generates the service units
+sudo machinectl shell secondbrain@ /bin/bash -c "systemctl --user daemon-reload"
+
+# Start both services
+sudo machinectl shell secondbrain@ /bin/bash -c \
+  "systemctl --user start secondbrain-ollama secondbrain-backend"
+
+# Check status
+sudo machinectl shell secondbrain@ /bin/bash -c \
+  "systemctl --user status secondbrain-ollama secondbrain-backend"
 ```
 
-**Expected output**: All containers show `running` status within 90 seconds.
+**Expected output**: Both services show `active (running)` within 90 seconds.
 If `ollama` takes longer (model loading), wait up to 2 minutes before checking.
 
 ---
 
-## Step 5: Remove Old Containers from Your Account
+## Step 4: Remove Old Containers from Your Account
 
 ```bash
 # Stop and remove the old containers from backstage440's storage
@@ -108,15 +110,15 @@ podman rmi localhost/secondbrain/backend:latest 2>/dev/null
 
 ---
 
-## Step 6: Mount the Windows Fileshare
+## Step 5: Mount the Windows Fileshare
 
 ```bash
 # Install cifs-utils if not already installed
 sudo apt install -y cifs-utils
 
 # Create the mount point
-sudo mkdir -p /mnt/fileshare
-sudo chown secondbrain:secondbrain /mnt/fileshare
+sudo mkdir -p /mnt/PersonalAssistantHub
+sudo chown secondbrain:secondbrain /mnt/PersonalAssistantHub
 
 # Create the credentials file (fill in your values)
 sudo tee /etc/samba/credentials.secondbrain > /dev/null << 'EOF'
@@ -133,31 +135,29 @@ SBGID=$(id -g secondbrain)
 echo "secondbrain UID=$SBUID GID=$SBGID"
 
 # Add mount to fstab (replace WINDOWS-HOST and SHARE-NAME)
-echo "//WINDOWS-HOST/SHARE-NAME /mnt/fileshare cifs credentials=/etc/samba/credentials.secondbrain,uid=$SBUID,gid=$SBGID,file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0" \
+echo "//WINDOWS-HOST/SHARE-NAME /mnt/PersonalAssistantHub cifs credentials=/etc/samba/credentials.secondbrain,uid=$SBUID,gid=$SBGID,file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0" \
   | sudo tee -a /etc/fstab
 
 # Test the mount
 sudo mount -a
-ls /mnt/fileshare  # should list files from Windows share
+ls /mnt/PersonalAssistantHub  # should list files from Windows share
 ```
 
 ---
 
-## Step 7: Verify Everything Survives a Reboot
+## Step 6: Verify Everything Survives a Reboot
 
 ```bash
 sudo reboot
 # After reboot, log back in as backstage440
 
 # Check containers are running as secondbrain
-sudo machinectl shell secondbrain@ /bin/bash -c "
-  source /opt/podmgr/.venv/bin/activate
-  podmgr pod status secondbrain
-"
+sudo machinectl shell secondbrain@ /bin/bash -c \
+  "systemctl --user status secondbrain-ollama secondbrain-backend"
 
 # Check fileshare is mounted
-ls /mnt/fileshare
-mount | grep fileshare
+ls /mnt/PersonalAssistantHub
+mount | grep PersonalAssistantHub
 ```
 
 ---
@@ -168,7 +168,7 @@ mount | grep fileshare
 ```bash
 # Check systemd user service status
 sudo machinectl shell secondbrain@ /bin/bash -c \
-  "systemctl --user status podmgr-secondbrain.service"
+  "systemctl --user status secondbrain-ollama secondbrain-backend"
 
 # Check linger is still set
 sudo loginctl show-user secondbrain | grep Linger
@@ -182,15 +182,14 @@ sudo machinectl shell secondbrain@ /bin/bash -c "podman ps"
 
 **SMB mount not appearing**:
 ```bash
-sudo journalctl -u mnt-fileshare.mount -n 50
+sudo journalctl -u mnt-PersonalAssistantHub.mount -n 50
 # Common cause: Windows machine offline or share name incorrect
 ```
 
-**Container health check failing**:
+**Container logs**:
 ```bash
-sudo machinectl shell secondbrain@ /bin/bash -c "
-  source /opt/podmgr/.venv/bin/activate
-  podmgr health status secondbrain-ollama
-  podmgr service logs podmgr-secondbrain-ollama --lines 50
-"
+sudo machinectl shell secondbrain@ /bin/bash -c \
+  "journalctl --user -u secondbrain-ollama.service -n 50"
+sudo machinectl shell secondbrain@ /bin/bash -c \
+  "journalctl --user -u secondbrain-backend.service -n 50"
 ```

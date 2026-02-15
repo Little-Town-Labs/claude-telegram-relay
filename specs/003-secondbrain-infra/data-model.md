@@ -32,7 +32,7 @@ This document describes the configuration schema for each artifact.
 - `/var/lib/secondbrain/` — home and service data
 - `/var/lib/secondbrain/.config/systemd/user/` — systemd user units
 - `/var/lib/secondbrain/.local/share/containers/` — Podman image storage
-- `/mnt/fileshare/` — SMB mount point (owned, read-only by default)
+- `/mnt/PersonalAssistantHub/` — SMB mount point (owned, read-only by default)
 
 ---
 
@@ -67,7 +67,7 @@ services:
     environment:
       OLLAMA_URL: http://localhost:11434
     volumes:
-      - /mnt/fileshare:/mnt/fileshare:ro
+      - /mnt/PersonalAssistantHub:/mnt/PersonalAssistantHub:ro
     health_check:
       type: http
       endpoint: /health
@@ -107,7 +107,7 @@ A `.gitignore` entry MUST ensure this path is never accidentally committed.
 **Path**: `infra/fstab.fragment` (template with placeholders)
 
 ```
-//WINDOWS-HOST/SHARE-NAME /mnt/fileshare cifs credentials=/etc/samba/credentials.secondbrain,uid=secondbrain,gid=secondbrain,file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0
+//WINDOWS-HOST/SHARE-NAME /mnt/PersonalAssistantHub cifs credentials=/etc/samba/credentials.secondbrain,uid=secondbrain,gid=secondbrain,file_mode=0640,dir_mode=0750,soft,_netdev,x-systemd.automount,nofail 0 0
 ```
 
 Operator replaces `WINDOWS-HOST` and `SHARE-NAME` at setup time and appends
@@ -125,7 +125,7 @@ Idempotent script that performs all one-time setup steps in order:
 2. Create `secondbrain` service account if not present
 3. Add subuid/subgid mappings if not present
 4. Enable linger
-5. Create mount point `/mnt/fileshare`
+5. Create mount point `/mnt/PersonalAssistantHub`
 6. Prompt operator for SMB credentials and write credentials file
 7. Remind operator to append fstab fragment and run `sudo mount -a`
 

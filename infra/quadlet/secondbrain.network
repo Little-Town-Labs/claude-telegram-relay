@@ -1,0 +1,9 @@
+# secondbrain.network
+# Quadlet network unit — creates a bridge network named 'systemd-secondbrain'.
+# Both SecondBrain containers join this network so they can reach each other
+# by container name (systemd-secondbrain-ollama, systemd-secondbrain-backend).
+
+[Network]
+
+[Install]
+WantedBy=default.target

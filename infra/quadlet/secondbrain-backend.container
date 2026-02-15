@@ -1,0 +1,25 @@
+# secondbrain-backend.container
+# Quadlet unit for the SecondBrain backend API.
+#
+# Communicates with Ollama via the secondbrain bridge network.
+# Ollama hostname on the bridge: systemd-secondbrain-ollama (Quadlet naming convention)
+#
+# Health check (manual): curl http://localhost:8080/health (run as secondbrain via machinectl)
+
+[Unit]
+Description=SecondBrain backend API
+After=network-online.target secondbrain-ollama.service
+Wants=secondbrain-ollama.service
+
+[Container]
+Image=localhost/secondbrain/backend:latest
+Network=secondbrain.network
+Environment=OLLAMA_URL=http://systemd-secondbrain-ollama:11434
+Volume=/mnt/PersonalAssistantHub:/mnt/PersonalAssistantHub:ro
+
+[Service]
+Restart=always
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

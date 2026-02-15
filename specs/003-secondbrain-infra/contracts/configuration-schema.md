@@ -8,28 +8,26 @@
 
 ---
 
-## Contract 1: Pod YAML (podmgr)
+## Contract 1: Quadlet Container Units
 
-**File**: `infra/secondbrain-pod.yaml`
-**Consumer**: podmgr CLI → generates systemd user units
-**Validation**: `podmgr config validate infra/secondbrain-pod.yaml`
+**Files**: `infra/quadlet/*.container`, `infra/quadlet/*.network`
+**Consumer**: Podman Quadlet generator → systemd user service units
+**Deployment**: `sudo cp infra/quadlet/*.container infra/quadlet/*.network /var/lib/secondbrain/.config/containers/systemd/`
 
-### Required Fields
+### Required Fields per `.container` Unit
 
-| Field | Type | Constraint |
+| Field | Section | Constraint |
 |---|---|---|
-| `name` | string | Must be `secondbrain` |
-| `restart_policy` | enum | Must be `always` |
-| `services[].name` | string | Must match container name |
-| `services[].image` | string | Must exist in `secondbrain` Podman storage |
-| `services[].health_check.type` | enum | `http`, `tcp`, or `command` |
-| `services[].health_check.retries` | int | Must be `>= 3` (constitution XXI) |
+| `Image` | `[Container]` | Must exist in `secondbrain` Podman storage |
+| `Network` | `[Container]` | Must be `secondbrain.network` for inter-service communication |
+| `Restart` | `[Service]` | Must be `always` |
+| `WantedBy` | `[Install]` | Must be `default.target` |
 
 ### Dependency Contract
 
-Services MUST be listed in this order so podmgr resolves dependencies correctly:
-1. `ollama` (no dependencies)
-2. `backend` (depends_on: `ollama`)
+- `secondbrain-ollama.container`: no container dependencies; `After=network-online.target`
+- `secondbrain-backend.container`: `After=secondbrain-ollama.service`, `Wants=secondbrain-ollama.service`
+- Ollama hostname on bridge network: `systemd-secondbrain-ollama` (Quadlet naming: `systemd-<stem>`)
 
 ---
 
@@ -54,7 +52,7 @@ Services MUST be listed in this order so podmgr resolves dependencies correctly:
 | Output | Path | Owner | Mode |
 |---|---|---|---|
 | Credentials file | `/etc/samba/credentials.secondbrain` | `root:root` | `600` |
-| Mount point | `/mnt/fileshare/` | `secondbrain:secondbrain` | `750` |
+| Mount point | `/mnt/PersonalAssistantHub/` | `secondbrain:secondbrain` | `750` |
 | fstab fragment | Appended to `/etc/fstab` | (root-owned file) | n/a |
 
 ### Exit Codes
@@ -62,10 +60,10 @@ Services MUST be listed in this order so podmgr resolves dependencies correctly:
 | Code | Meaning |
 |---|---|
 | 0 | All steps completed successfully |
-| 1 | Required command not found (e.g., podmgr not installed) |
+| 1 | Required command not found |
 | 2 | Service account creation failed |
 | 3 | Image migration failed |
-| 4 | podmgr pod init failed |
+| 4 | Quadlet deployment or container start failed |
 | 5 | Mount test failed |
 
 ---
@@ -80,8 +78,8 @@ These are the verifiable post-setup assertions used in quickstart.md validation.
 | Linger enabled | `loginctl show-user secondbrain \| grep Linger` | `Linger=yes` |
 | subuid mapped | `grep secondbrain /etc/subuid` | `secondbrain:100000:65536` |
 | Images migrated | `machinectl shell secondbrain@ ... podman images` | Shows 2 images |
-| Containers healthy | `podmgr pod status secondbrain` | Both show `running` |
-| Fileshare mounted | `mount \| grep fileshare` | Shows cifs mount |
-| Fileshare readable | `ls /mnt/fileshare` | Lists Windows files |
+| Containers healthy | `sudo machinectl shell secondbrain@ /bin/bash -c "systemctl --user is-active secondbrain-ollama.service secondbrain-backend.service"` | Both show `active` |
+| Fileshare mounted | `mount \| grep PersonalAssistantHub` | Shows cifs mount |
+| Fileshare readable | `ls /mnt/PersonalAssistantHub` | Lists Windows files |
 | Isolation enforced | `sudo -u secondbrain ls /home/backstage440` | Permission denied |
 | Survives reboot | (reboot + re-run checks) | All checks pass |
